@@ -5,6 +5,7 @@ export interface User {
   email: string;
   avatarUrl?: string;
   role: 'user' | 'admin';
+  status?: 'active' | 'suspended';
   bio?: string;
   location?: string;
   website?: string;
@@ -63,6 +64,14 @@ export interface SnippetVersion {
   language: string;
   changeDescription: string;
   updatedBy: User | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Favorite {
+  _id: string;
+  userId: string;
+  snippetId: Snippet;
   createdAt: string;
   updatedAt: string;
 }

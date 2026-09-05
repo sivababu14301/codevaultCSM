@@ -65,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search code snippets, tags, categories..."
+              placeholder="Search by title, author or user ID..."
               className="w-full bg-slate-50 dark:bg-[#0B1120] border border-slate-200 dark:border-[#1F2937] rounded-full pl-10 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
             />
           </form>

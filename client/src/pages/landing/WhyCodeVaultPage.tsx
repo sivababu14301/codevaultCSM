@@ -5,7 +5,6 @@ import { SaaSNavbar } from '../../components/common/SaaSNavbar';
 import { CTASection } from '../../components/landing/CTASection';
 import { Footer } from '../../components/landing/Footer';
 import { FileText, FolderOpen, Bookmark, MessageSquare, CheckCircle2 } from 'lucide-react';
-
 export const WhyCodeVaultPage: React.FC = () => {
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Copy, Check, Trash2, Edit, Eye, GitFork, User, Calendar } from 'lucide-react';
+import { ArrowLeft, Star, Copy, Trash2, Eye, User, Calendar } from 'lucide-react';
 import { useSnippets } from '../../hooks/useSnippets';
 import { CodeEditor } from '../../components/snippets/CodeEditor';
 import { Button } from '../../components/ui/Button';
@@ -11,7 +11,7 @@ import { copyToClipboard } from '../../utils/copyToClipboard';
 export const SnippetDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { snippets, toggleFavorite, deleteSnippet } = useSnippets();
+  const { snippets, favoriteSnippetIds, toggleFavorite, deleteSnippet } = useSnippets();
   const [copied, setCopied] = useState(false);
 
   const snippet = snippets.find((s) => s._id === id);
@@ -24,6 +24,8 @@ export const SnippetDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const isFavorited = favoriteSnippetIds?.includes(snippet._id) ?? false;
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(snippet.code);
@@ -55,9 +57,9 @@ export const SnippetDetailPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => toggleFavorite(snippet._id)}
-            icon={<Star className={`w-4 h-4 ${snippet.isFavorited ? 'fill-amber-400 text-amber-400' : ''}`} />}
+            icon={<Star className={`w-4 h-4 ${isFavorited ? 'fill-amber-400 text-amber-400' : ''}`} />}
           >
-            {snippet.isFavorited ? 'Favorited' : 'Favorite'}
+            {isFavorited ? 'Favorited' : 'Favorite'}
           </Button>
           <Button variant="outline" size="sm" icon={<Copy className="w-4 h-4" />} onClick={handleCopy}>
             {copied ? 'Copied!' : 'Copy Code'}

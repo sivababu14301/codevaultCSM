@@ -25,8 +25,8 @@ export const EditSnippetPage: React.FC = () => {
         const data = await snippetService.getSnippetById(id);
         
         // Ownership check
-        const authorObj = typeof data.author === 'object' ? data.author : null;
-        const isOwner = user && authorObj && authorObj._id === user._id;
+        const authorId = typeof data.author === 'object' ? data.author._id : data.author;
+        const isOwner = user && authorId === user._id;
         
         if (!isOwner) {
           setError('You are not authorized to edit this snippet.');

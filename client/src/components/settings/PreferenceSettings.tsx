@@ -14,9 +14,22 @@ export const PreferenceSettings: React.FC<PreferenceSettingsProps> = ({ settings
   const languageOptions = [
     { value: 'javascript', label: 'JavaScript' },
     { value: 'typescript', label: 'TypeScript' },
+    { value: 'react', label: 'React' },
+    { value: 'node.js', label: 'Node.js' },
     { value: 'python', label: 'Python' },
     { value: 'html', label: 'HTML' },
     { value: 'css', label: 'CSS' },
+    { value: 'go', label: 'Go' },
+    { value: 'rust', label: 'Rust' },
+    { value: 'java', label: 'Java' },
+    { value: 'c++', label: 'C++' },
+    { value: 'c#', label: 'C#' },
+    { value: 'php', label: 'PHP' },
+    { value: 'ruby', label: 'Ruby' },
+    { value: 'swift', label: 'Swift' },
+    { value: 'kotlin', label: 'Kotlin' },
+    { value: 'sql', label: 'SQL' },
+    { value: 'shell', label: 'Shell' },
   ];
 
   return (

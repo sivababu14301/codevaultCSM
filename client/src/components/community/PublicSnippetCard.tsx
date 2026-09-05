@@ -7,12 +7,14 @@ import { snippetService } from '../../services/snippetService';
 import { useToast } from '../ui/Toast';
 import { LanguageBadge } from '../snippets/LanguageBadge';
 import { TagChip } from '../snippets/TagChip';
+import { useSnippets } from '../../hooks/useSnippets';
 
 interface PublicSnippetCardProps {
   snippet: Snippet;
 }
 
 export const PublicSnippetCard: React.FC<PublicSnippetCardProps> = ({ snippet: initialSnippet }) => {
+  const { favoriteSnippetIds, toggleFavorite } = useSnippets();
   const navigate = useNavigate();
   const { toast: showToast } = useToast();
   const [snippet, setSnippet] = useState(initialSnippet);
@@ -20,6 +22,8 @@ export const PublicSnippetCard: React.FC<PublicSnippetCardProps> = ({ snippet: i
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isFavorited = favoriteSnippetIds?.includes(snippet._id) ?? false;
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -36,8 +40,7 @@ export const PublicSnippetCard: React.FC<PublicSnippetCardProps> = ({ snippet: i
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const updated = await snippetService.toggleFavorite(snippet._id);
-      setSnippet(updated);
+      await toggleFavorite(snippet._id);
     } catch (err) {
       showToast('Failed to like snippet', 'error');
     }
@@ -48,7 +51,7 @@ export const PublicSnippetCard: React.FC<PublicSnippetCardProps> = ({ snippet: i
     try {
       await snippetService.incrementShare(snippet._id);
       setSnippet(prev => ({ ...prev, sharesCount: (prev.sharesCount || 0) + 1 }));
-      await navigator.clipboard.writeText(`${window.location.origin}/snippets/${snippet._id}`);
+      await navigator.clipboard.writeText(`${window.location.origin}/s/${snippet._id}`);
       showToast('Link copied to clipboard!', 'success');
     } catch (err) {
       showToast('Failed to share snippet', 'error');
@@ -150,10 +153,10 @@ export const PublicSnippetCard: React.FC<PublicSnippetCardProps> = ({ snippet: i
           </div>
           <button 
             onClick={handleLike}
-            className={`flex items-center gap-1.5 transition-colors ${snippet.isFavorited ? 'text-amber-500' : 'hover:text-amber-500'}`}
+            className={`flex items-center gap-1.5 transition-colors ${isFavorited ? 'text-amber-500' : 'hover:text-amber-500'}`}
             title="Like"
           >
-            <Heart className={`w-4 h-4 ${snippet.isFavorited ? 'fill-amber-500' : ''}`} />
+            <Heart className={`w-4 h-4 ${isFavorited ? 'fill-amber-500' : ''}`} />
             <span>{snippet.favoritesCount || 0}</span>
           </button>
           <button 

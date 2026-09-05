@@ -1,10 +1,12 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Snippet, SearchFilters } from '../types';
 import { snippetService } from '../services/snippetService';
+import { favoriteService } from '../services/favoriteService';
 import { AuthContext } from './AuthContext';
 
 interface SnippetContextType {
   snippets: Snippet[];
+  favoriteSnippetIds: string[];
   activeFilter: SearchFilters;
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string) => void;
@@ -20,6 +22,7 @@ export const SnippetContext = createContext<SnippetContextType | undefined>(unde
 
 export const SnippetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [snippets, setSnippets] = useState<Snippet[]>([]);
+  const [favoriteSnippetIds, setFavoriteSnippetIds] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<SearchFilters>({});
   
   const authContext = useContext(AuthContext);
@@ -28,7 +31,6 @@ export const SnippetProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const fetchSnippets = React.useCallback(async (filters?: SearchFilters) => {
     try {
       const data = await snippetService.getAllSnippets(filters);
-      // Ensure backend array mapping matches frontend expectations
       setSnippets(data || []);
     } catch (error) {
       console.error('Error fetching snippets:', error);
@@ -36,13 +38,25 @@ export const SnippetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
+  const fetchFavorites = React.useCallback(async () => {
+    try {
+      const data = await favoriteService.getFavorites();
+      setFavoriteSnippetIds(data.map(fav => typeof fav.snippetId === 'string' ? fav.snippetId : fav.snippetId._id));
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+      setFavoriteSnippetIds([]);
+    }
+  }, []);
+
   useEffect(() => {
     if (user) {
       fetchSnippets();
+      fetchFavorites();
     } else {
       setSnippets([]);
+      setFavoriteSnippetIds([]);
     }
-  }, [user]);
+  }, [user, fetchSnippets, fetchFavorites]);
 
   const setSearchQuery = (query: string) => {
     setActiveFilter((prev) => ({ ...prev, query }));
@@ -54,10 +68,18 @@ export const SnippetProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const toggleFavorite = async (snippetId: string) => {
     try {
-      const updatedSnippet = await snippetService.toggleFavorite(snippetId);
-      setSnippets((prev) =>
-        prev.map((s) => (s._id === snippetId ? updatedSnippet : s))
-      );
+      const isFavorite = favoriteSnippetIds.includes(snippetId);
+      if (isFavorite) {
+        await favoriteService.removeFavorite(snippetId);
+        setFavoriteSnippetIds(prev => prev.filter(id => id !== snippetId));
+        // Update favorites count on snippet locally
+        setSnippets(prev => prev.map(s => s._id === snippetId ? { ...s, favoritesCount: Math.max(0, s.favoritesCount - 1) } : s));
+      } else {
+        await favoriteService.addFavorite(snippetId);
+        setFavoriteSnippetIds(prev => [...prev, snippetId]);
+        // Update favorites count on snippet locally
+        setSnippets(prev => prev.map(s => s._id === snippetId ? { ...s, favoritesCount: s.favoritesCount + 1 } : s));
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
@@ -111,6 +133,7 @@ export const SnippetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <SnippetContext.Provider
       value={{
         snippets,
+        favoriteSnippetIds,
         activeFilter,
         setSearchQuery,
         setCategoryFilter,

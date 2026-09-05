@@ -14,10 +14,26 @@ const getCommunitySnippets = async (req, res) => {
     if (language) query.language = language;
     if (category) query.category = category;
     if (search) {
+      // Find matching users (author search)
+      let authorQuery = { $or: [
+        { username: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } }
+      ]};
+      
+      const mongoose = require('mongoose');
+      if (mongoose.isValidObjectId(search)) {
+        authorQuery.$or.push({ _id: search });
+      }
+
+      const User = require('../models/User');
+      const matchedUsers = await User.find(authorQuery).select('_id');
+      const matchedUserIds = matchedUsers.map(u => u._id);
+
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
+        { tags: { $in: [new RegExp(search, 'i')] } },
+        { author: { $in: matchedUserIds } }
       ];
     }
 

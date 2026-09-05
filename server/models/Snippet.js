@@ -52,10 +52,6 @@ const snippetSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
-    isFavorited: {
-      type: Boolean,
-      default: false,
-    },
     sharesCount: {
       type: Number,
       default: 0,

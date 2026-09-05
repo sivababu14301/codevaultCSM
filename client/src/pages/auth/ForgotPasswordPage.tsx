@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { AuthLayout } from '../../components/auth/AuthLayout';
 import { InputField } from '../../components/auth/InputField';
 import { SubmitButton } from '../../components/auth/SubmitButton';
 import { useToast } from '../../components/ui/Toast';
+import { api } from '../../services/api';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -21,6 +22,7 @@ export function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -33,14 +35,21 @@ export function ForgotPasswordPage() {
   const onSubmit = async (data: ForgotPasswordFormValues) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await api.post('/auth/forgot-password', { email: data.email });
       
       console.log('Password reset requested for:', data.email);
       setIsSubmitted(true);
-      toast('Reset link sent to your email.', 'success');
-    } catch (error) {
-      toast('Failed to send reset link.', 'error');
+      toast('Reset link sent! Redirecting to simulate email link...', 'success');
+      
+      // Simulate clicking the email link
+      setTimeout(() => {
+        if (response.data.resetToken) {
+          navigate(`/reset-password/${response.data.resetToken}`);
+        }
+      }, 2000);
+      
+    } catch (error: any) {
+      toast(error.response?.data?.message || 'Failed to send reset link.', 'error');
     } finally {
       setIsLoading(false);
     }

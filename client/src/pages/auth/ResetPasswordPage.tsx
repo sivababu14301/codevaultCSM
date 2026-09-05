@@ -9,6 +9,7 @@ import { AuthLayout } from '../../components/auth/AuthLayout';
 import { InputField } from '../../components/auth/InputField';
 import { SubmitButton } from '../../components/auth/SubmitButton';
 import { useToast } from '../../components/ui/Toast';
+import { api } from '../../services/api';
 
 const resetPasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -37,14 +38,18 @@ export function ResetPasswordPage() {
   const onSubmit = async (data: ResetPasswordFormValues) => {
     setIsLoading(true);
     try {
-      // Simulate API call with token
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!token) {
+        toast('Invalid password reset link.', 'error');
+        return;
+      }
       
-      console.log('Password reset for token:', token, data);
+      await api.put(`/auth/reset-password/${token}`, { password: data.password });
+      
+      console.log('Password reset for token:', token);
       toast('Password has been reset successfully!', 'success');
       navigate('/login');
-    } catch (error) {
-      toast('Failed to reset password. The link might be expired.', 'error');
+    } catch (error: any) {
+      toast(error.response?.data?.message || 'Failed to reset password. The link might be expired.', 'error');
     } finally {
       setIsLoading(false);
     }

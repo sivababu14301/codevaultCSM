@@ -6,12 +6,15 @@ const {
   createSnippet,
   updateSnippet,
   deleteSnippet,
-  toggleFavorite,
   getSnippetVersions,
   restoreSnippetVersion,
-  duplicateSnippet
+  duplicateSnippet,
+  getSharedSnippet
 } = require('../controllers/snippetController');
 const { protect } = require('../middleware/authMiddleware');
+
+router.route('/shared/:id')
+  .get(getSharedSnippet);
 
 router.route('/')
   .get(protect, getSnippets)
@@ -21,9 +24,6 @@ router.route('/:id')
   .get(protect, getSnippetById)
   .put(protect, updateSnippet)
   .delete(protect, deleteSnippet);
-
-router.route('/:id/favorite')
-  .post(protect, toggleFavorite);
 
 router.route('/:id/duplicate')
   .post(protect, duplicateSnippet);

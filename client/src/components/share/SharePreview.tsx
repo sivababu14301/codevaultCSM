@@ -17,7 +17,7 @@ export const SharePreview: React.FC<SharePreviewProps> = ({ snippet }) => {
           {snippet.description || 'View this code snippet on CodeVault.'}
         </p>
         <div className="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
-          localhost:5173/s/...
+          {window.location.origin}/s/...
         </div>
       </div>
     </div>

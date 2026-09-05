@@ -60,6 +60,8 @@ const userSchema = mongoose.Schema(
       enum: ['active', 'suspended'],
       default: 'active',
     },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
   {
     timestamps: true,

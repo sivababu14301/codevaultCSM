@@ -5,7 +5,6 @@ import { SaaSNavbar } from '../../components/common/SaaSNavbar';
 import { HowItWorksSection } from '../../components/landing/HowItWorksSection';
 import { CTASection } from '../../components/landing/CTASection';
 import { Footer } from '../../components/landing/Footer';
-
 export const HowItWorksPage: React.FC = () => {
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();

@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { SaveButton } from './SaveButton';
 
+import { AvatarUpload } from './AvatarUpload';
+
 const profileSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
   username: z.string().min(3, 'Username must be at least 3 characters'),
@@ -12,6 +14,7 @@ const profileSchema = z.object({
   location: z.string().optional(),
   website: z.string().url('Invalid URL').optional().or(z.literal('')),
   skills: z.string().optional(),
+  avatarUrl: z.string().nullable().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -24,7 +27,7 @@ export const ProfileForm: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const { user, updateUser } = useAuth();
 
-  const { register, handleSubmit, formState: { errors, isSubmitting, isDirty }, reset } = useForm<ProfileFormValues>({
+  const { register, handleSubmit, formState: { errors, isSubmitting, isDirty }, reset, watch, setValue } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       fullName: user?.name || '',
@@ -33,9 +36,12 @@ export const ProfileForm: React.FC = () => {
       bio: user?.bio || '',
       location: user?.location || '',
       website: user?.website || '',
-      skills: user?.skills ? user.skills.join(', ') : ''
+      skills: user?.skills ? user.skills.join(', ') : '',
+      avatarUrl: user?.avatarUrl || null,
     }
   });
+
+  const avatarUrl = watch('avatarUrl');
 
   // Re-initialize form when user data finishes loading from API
   React.useEffect(() => {
@@ -47,7 +53,8 @@ export const ProfileForm: React.FC = () => {
         bio: user.bio || '',
         location: user.location || '',
         website: user.website || '',
-        skills: user.skills ? user.skills.join(', ') : ''
+        skills: user.skills ? user.skills.join(', ') : '',
+        avatarUrl: user.avatarUrl || null,
       });
     }
   }, [user, reset]);
@@ -62,7 +69,8 @@ export const ProfileForm: React.FC = () => {
         bio: data.bio,
         location: data.location,
         website: data.website,
-        skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : []
+        skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : [],
+        avatarUrl: data.avatarUrl,
       };
       
       const res = await api.put('/auth/profile', payload);
@@ -76,7 +84,7 @@ export const ProfileForm: React.FC = () => {
       setIsSuccess(true);
       setTimeout(() => setIsSuccess(false), 3000);
     } catch (error: any) {
-      setApiError(error.response?.data?.message || 'Failed to update profile');
+      setApiError('Failed to update profile. Please try again.');
       console.error(error);
     }
   };
@@ -85,8 +93,24 @@ export const ProfileForm: React.FC = () => {
   const labelClasses = "block text-sm font-semibold text-gray-700 mb-1.5";
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {apiError && (
+    <div className="relative">
+      {isSuccess && (
+        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 z-50 animate-bounce">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span className="font-medium">Profile updated successfully.</span>
+        </div>
+      )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <AvatarUpload 
+          name={watch('fullName') || user?.name || "Developer"} 
+          currentAvatar={avatarUrl} 
+          onAvatarChange={(newAvatar) => {
+            setValue('avatarUrl', newAvatar, { shouldDirty: true });
+          }} 
+        />
+        {apiError && (
         <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm">
           {apiError}
         </div>
@@ -174,6 +198,7 @@ export const ProfileForm: React.FC = () => {
       <div className="pt-4 flex justify-end">
         <SaveButton isSubmitting={isSubmitting} isSuccess={isSuccess} disabled={!isDirty} />
       </div>
-    </form>
+      </form>
+    </div>
   );
 };

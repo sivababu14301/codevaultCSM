@@ -7,7 +7,7 @@ const getPublicCategories = async (req, res) => {
     
     const categoriesWithCounts = await Promise.all(categories.map(async (c) => {
       const count = await Snippet.countDocuments({ 
-        $or: [{ categoryId: c._id }, { category: c.name }]
+        $or: [{ categoryId: c._id }, { category: c.name }, { language: { $regex: `^${c.name}$`, $options: 'i' } }]
       });
       return {
         id: c._id,

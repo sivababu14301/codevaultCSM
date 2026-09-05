@@ -2,15 +2,22 @@ import React from 'react';
 import { Code, Bookmark, Star, Share2 } from 'lucide-react';
 import { useSnippets } from '../../hooks/useSnippets';
 import { useCollections } from '../../hooks/useCollections';
+import { useAuth } from '../../hooks/useAuth';
 
 export const ProfileStats: React.FC = () => {
-  const { snippets } = useSnippets();
+  const { snippets, favoriteSnippetIds } = useSnippets();
   const { collections } = useCollections();
+  const { user } = useAuth();
 
-  const totalSnippets = snippets.length;
-  const favoritesCount = snippets.filter(s => s.isFavorited).length;
+  const mySnippets = snippets.filter(s => {
+    const authorId = typeof s.author === 'object' ? s.author._id : s.author;
+    return authorId === user?._id;
+  });
+
+  const totalSnippets = mySnippets.length;
+  const favoritesCount = favoriteSnippetIds?.length || 0;
   const collectionsCount = collections.length;
-  const sharedCount = snippets.filter(s => s.isPublic).length;
+  const sharedCount = mySnippets.filter(s => s.isPublic).length;
 
   const stats = [
     { label: 'Total Snippets', value: totalSnippets, icon: Code, color: 'text-purple-600', bg: 'bg-purple-100', border: 'border-purple-200' },

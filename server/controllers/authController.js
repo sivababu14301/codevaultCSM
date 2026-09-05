@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
+const crypto = require('crypto');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -41,6 +42,7 @@ const registerUser = async (req, res) => {
         skills: user.skills,
         pinnedSnippets: user.pinnedSnippets,
         role: user.role,
+        status: user.status,
         token: generateToken(user._id, user.email, user.role),
       });
     } else {
@@ -92,6 +94,7 @@ const loginUser = async (req, res) => {
           skills: adminUser.skills,
           pinnedSnippets: adminUser.pinnedSnippets,
           role: 'admin',
+          status: adminUser.status,
           token: generateToken(adminUser._id, adminUser.email, 'admin'),
         });
       } else {
@@ -114,6 +117,7 @@ const loginUser = async (req, res) => {
         skills: user.skills,
         pinnedSnippets: user.pinnedSnippets,
         role: user.role,
+        status: user.status,
         token: generateToken(user._id, user.email, user.role),
       });
     } else {
@@ -147,6 +151,7 @@ const getMe = async (req, res) => {
         skills: user.skills,
         pinnedSnippets: user.pinnedSnippets,
         role: user.role,
+        status: user.status,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -192,6 +197,7 @@ const updateUserProfile = async (req, res) => {
         skills: updatedUser.skills,
         pinnedSnippets: updatedUser.pinnedSnippets,
         role: updatedUser.role,
+        status: updatedUser.status,
         token: generateToken(updatedUser._id, updatedUser.email, updatedUser.role),
       });
     } else {
@@ -205,9 +211,86 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+// @desc    Forgot Password
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email: new RegExp(`^${email.trim()}$`, 'i') });
+
+    if (!user) {
+      return res.status(404).json({ message: 'There is no user with that email' });
+    }
+
+    // Generate token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken field
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Set expire (10 minutes)
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    // In a real app, send email here. For now, we return the token directly.
+    res.status(200).json({ 
+      message: 'Email sent', 
+      resetToken // Returned for dev purposes
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+// @desc    Reset Password
+// @route   PUT /api/auth/reset-password/:token
+// @access  Public
+const resetPassword = async (req, res) => {
+  const { password } = req.body;
+  
+  try {
+    // Get hashed token
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    }).select('+password');
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Set new password
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Password reset successfully',
+      token: generateToken(user._id, user.email, user.role)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
   updateUserProfile,
+  forgotPassword,
+  resetPassword,
 };

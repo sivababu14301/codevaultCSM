@@ -131,7 +131,8 @@ export const ViewSnippetPage: React.FC = () => {
   }
 
   const authorObj = typeof snippet.author === 'object' ? snippet.author : null;
-  const isOwner = user && authorObj && authorObj._id === user._id;
+  const authorId = authorObj ? authorObj._id : snippet.author;
+  const isOwner = user && authorId === user._id;
 
   return (
     <>
@@ -172,7 +173,7 @@ export const ViewSnippetPage: React.FC = () => {
             >
               <Star className={`w-4 h-4 ${isFavorited ? 'fill-amber-500' : ''}`} />
             </button>
-            {(snippet.isPublic || isOwner) && (
+            {isOwner && (
               <button 
                 onClick={handleDuplicate}
                 disabled={isDuplicating}
@@ -182,15 +183,17 @@ export const ViewSnippetPage: React.FC = () => {
                 <CopyPlus className="w-4 h-4" /> Duplicate
               </button>
             )}
+            {user && (
+              <button 
+                onClick={handleTogglePin}
+                className={`p-2.5 rounded-xl border transition-colors shadow-sm ${user?.pinnedSnippets?.includes(snippet._id) ? 'bg-purple-50 border-purple-200 text-purple-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                title={user?.pinnedSnippets?.includes(snippet._id) ? "Unpin snippet" : "Pin snippet"}
+              >
+                <Pin className={`w-4 h-4 ${user?.pinnedSnippets?.includes(snippet._id) ? 'fill-purple-600' : ''}`} />
+              </button>
+            )}
             {isOwner && (
               <>
-                <button 
-                  onClick={handleTogglePin}
-                  className={`p-2.5 rounded-xl border transition-colors shadow-sm ${user?.pinnedSnippets?.includes(snippet._id) ? 'bg-purple-50 border-purple-200 text-purple-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
-                  title={user?.pinnedSnippets?.includes(snippet._id) ? "Unpin snippet" : "Pin snippet"}
-                >
-                  <Pin className={`w-4 h-4 ${user?.pinnedSnippets?.includes(snippet._id) ? 'fill-purple-600' : ''}`} />
-                </button>
                 <button 
                   onClick={() => setShowVersionHistory(true)}
                   className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-semibold text-sm transition-colors shadow-sm flex items-center gap-2"

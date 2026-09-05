@@ -9,10 +9,10 @@ import { FavoritesGrid } from '../../components/favorites/FavoritesGrid';
 import { EmptyFavorites } from '../../components/favorites/EmptyFavorites';
 
 export const FavoritesPage: React.FC = () => {
-  const { snippets, toggleFavorite } = useSnippets();
+  const { snippets, favoriteSnippetIds, toggleFavorite } = useSnippets();
   
   // Initialize state with only favorited snippets
-  const favorites = useMemo(() => snippets.filter(s => s.isFavorited), [snippets]);
+  const favorites = useMemo(() => snippets.filter(s => favoriteSnippetIds?.includes(s._id)), [snippets, favoriteSnippetIds]);
   
   // Toolbar state
   const [searchQuery, setSearchQuery] = useState('');

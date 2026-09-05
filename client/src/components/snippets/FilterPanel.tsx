@@ -9,6 +9,7 @@ interface FilterPanelProps {
   setCategoryFilter: (cat: string) => void;
   sortBy: string;
   setSortBy: (sort: string) => void;
+  dbCategories: any[];
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -17,23 +18,10 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   categoryFilter,
   setCategoryFilter,
   sortBy,
-  setSortBy
+  setSortBy,
+  dbCategories
 }) => {
-  const languages = ['All', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'HTML', 'CSS', 'Go', 'Rust', 'Java'];
-  
-  const [dbCategories, setDbCategories] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await api.get('/categories');
-        setDbCategories(res.data);
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
-      }
-    };
-    fetchCategories();
-  }, []);
+  const languages = ['All', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'HTML', 'CSS', 'Go', 'Rust', 'Java', 'SQL'];
   
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">

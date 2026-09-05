@@ -5,7 +5,6 @@ import { SaaSNavbar } from '../../components/common/SaaSNavbar';
 import { FeaturesSection } from '../../components/landing/FeaturesSection';
 import { CTASection } from '../../components/landing/CTASection';
 import { Footer } from '../../components/landing/Footer';
-
 export const FeaturesPage: React.FC = () => {
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();

@@ -1,18 +1,65 @@
 const Snippet = require('../models/Snippet');
 const SnippetVersion = require('../models/SnippetVersion');
+const User = require('../models/User');
+const mongoose = require('mongoose');
 
 // @desc    Get snippets for the logged-in user and public snippets
 // @route   GET /api/snippets
 // @access  Private
 const getSnippets = async (req, res) => {
   try {
-    const { visibility } = req.query;
-    let query = { $or: [{ author: req.user._id }, { isPublic: true }] };
+    const { visibility, search } = req.query;
+    
+    // Base query for visibility
+    let query = {};
+    
+    if (req.user.role === 'admin') {
+      // Admin sees everything by default
+      if (visibility === 'public') {
+        query.isPublic = true;
+      } else if (visibility === 'private') {
+        query.isPublic = false;
+      }
+    } else {
+      // Normal user visibility rules
+      if (visibility === 'public') {
+        query.isPublic = true;
+      } else if (visibility === 'private') {
+        query = { author: req.user._id, isPublic: false };
+      } else {
+        query = { $or: [{ author: req.user._id }, { isPublic: true }] };
+      }
+    }
 
-    if (visibility === 'public') {
-      query = { isPublic: true };
-    } else if (visibility === 'private') {
-      query = { author: req.user._id, isPublic: false };
+    if (search) {
+      // Find matching users (author search)
+      let authorQuery = { $or: [
+        { username: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } }
+      ]};
+      
+      if (mongoose.isValidObjectId(search)) {
+        authorQuery.$or.push({ _id: search });
+      }
+
+      const matchedUsers = await User.find(authorQuery).select('_id');
+      const matchedUserIds = matchedUsers.map(u => u._id);
+
+      // Add text search conditions
+      const searchConditions = {
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { language: { $regex: search, $options: 'i' } },
+          { category: { $regex: search, $options: 'i' } },
+          { author: { $in: matchedUserIds } }
+        ]
+      };
+
+      if (Object.keys(query).length > 0) {
+        query = { $and: [query, searchConditions] };
+      } else {
+        query = searchConditions;
+      }
     }
 
     const snippets = await Snippet.find(query).populate('author', 'name email username');
@@ -76,12 +123,13 @@ const updateSnippet = async (req, res) => {
     
     // Check for user
     if (snippet.author.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'User not authorized' });
+      return res.status(403).json({ message: 'User not authorized' });
     }
 
     const nextVersion = (snippet.currentVersion || 1) + 1;
     
     const updateData = { ...req.body, currentVersion: nextVersion };
+    delete updateData.author;
 
     const updatedSnippet = await Snippet.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
@@ -123,7 +171,7 @@ const deleteSnippet = async (req, res) => {
 
     // Check for user
     if (snippet.author.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'User not authorized' });
+      return res.status(403).json({ message: 'User not authorized' });
     }
 
     await snippet.deleteOne();
@@ -133,26 +181,7 @@ const deleteSnippet = async (req, res) => {
   }
 };
 
-// @desc    Toggle favorite on a snippet
-// @route   POST /api/snippets/:id/favorite
-// @access  Private
-const toggleFavorite = async (req, res) => {
-  try {
-    const snippet = await Snippet.findById(req.params.id);
-    if (!snippet) {
-      return res.status(404).json({ message: 'Snippet not found' });
-    }
 
-    // Mock logic for toggle favorite for the current user
-    snippet.isFavorited = !snippet.isFavorited;
-    snippet.favoritesCount = snippet.isFavorited ? snippet.favoritesCount + 1 : Math.max(0, snippet.favoritesCount - 1);
-    
-    await snippet.save();
-    res.status(200).json(snippet);
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
-  }
-};
 
 // @desc    Get snippet by ID
 // @route   GET /api/snippets/:id
@@ -165,7 +194,7 @@ const getSnippetById = async (req, res) => {
       return res.status(404).json({ message: 'Snippet not found' });
     }
 
-    if (!snippet.isPublic && snippet.author._id.toString() !== req.user._id.toString()) {
+    if (!snippet.isPublic && snippet.author._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(401).json({ message: 'Not authorized to view this snippet' });
     }
 
@@ -186,7 +215,7 @@ const getSnippetVersions = async (req, res) => {
     }
 
     // Check visibility / ownership
-    if (!snippet.isPublic && snippet.author.toString() !== req.user._id.toString()) {
+    if (!snippet.isPublic && snippet.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(401).json({ message: 'User not authorized to view versions' });
     }
 
@@ -211,7 +240,7 @@ const restoreSnippetVersion = async (req, res) => {
     }
 
     if (snippet.author.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'User not authorized to restore versions' });
+      return res.status(403).json({ message: 'User not authorized to restore versions' });
     }
 
     const versionToRestore = await SnippetVersion.findById(req.params.versionId);
@@ -256,9 +285,9 @@ const duplicateSnippet = async (req, res) => {
       return res.status(404).json({ message: 'Snippet not found' });
     }
 
-    // Check if the user is authorized to duplicate
-    if (!originalSnippet.isPublic && originalSnippet.author.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized to duplicate this private snippet' });
+    // Check if the user is authorized to duplicate (owner only)
+    if (originalSnippet.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the owner can duplicate this snippet' });
     }
 
     // Create duplicate
@@ -293,14 +322,28 @@ const duplicateSnippet = async (req, res) => {
   }
 };
 
+const getSharedSnippet = async (req, res) => {
+  try {
+    const snippet = await Snippet.findById(req.params.id).populate('author', 'name email username avatarUrl');
+    
+    if (!snippet) {
+      return res.status(404).json({ message: 'Snippet not found' });
+    }
+
+    res.status(200).json(snippet);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 module.exports = {
   getSnippets,
   getSnippetById,
   createSnippet,
   updateSnippet,
   deleteSnippet,
-  toggleFavorite,
   getSnippetVersions,
   restoreSnippetVersion,
-  duplicateSnippet
+  duplicateSnippet,
+  getSharedSnippet
 };

@@ -6,58 +6,7 @@ import SearchResults from '../../components/search/SearchResults';
 import EmptyState from '../../components/search/EmptyState';
 import { SnippetResult } from '../../components/search/SnippetResultCard';
 
-const DUMMY_SNIPPETS: SnippetResult[] = [
-  {
-    id: '1',
-    title: 'React Custom Hook for LocalStorage',
-    language: 'TypeScript',
-    category: 'React',
-    tags: ['hooks', 'utils'],
-    isFavorite: true,
-    visibility: 'public',
-    updatedAt: '2 days ago',
-  },
-  {
-    id: '2',
-    title: 'Express JWT Authentication Middleware',
-    language: 'JavaScript',
-    category: 'Node.js',
-    tags: ['auth', 'api'],
-    isFavorite: false,
-    visibility: 'private',
-    updatedAt: '1 week ago',
-  },
-  {
-    id: '3',
-    title: 'CSS Grid Responsive Layout',
-    language: 'HTML/CSS',
-    category: 'Frontend Utilities',
-    tags: ['ui'],
-    isFavorite: true,
-    visibility: 'public',
-    updatedAt: '3 weeks ago',
-  },
-  {
-    id: '4',
-    title: 'Python Data Cleaning Script',
-    language: 'Python',
-    category: 'Backend Architecture',
-    tags: ['utils', 'algorithms'],
-    isFavorite: false,
-    visibility: 'private',
-    updatedAt: '1 month ago',
-  },
-  {
-    id: '5',
-    title: 'SQL Join Types Cheat Sheet',
-    language: 'SQL',
-    category: 'Database Queries',
-    tags: ['database'],
-    isFavorite: true,
-    visibility: 'public',
-    updatedAt: '2 months ago',
-  },
-];
+// Dummy snippets removed
 
 const INITIAL_FILTERS: FilterState = {
   languages: [],
@@ -68,18 +17,64 @@ const INITIAL_FILTERS: FilterState = {
   visibility: 'all',
 };
 
+import { useSearchParams } from 'react-router-dom';
+import { useSnippets } from '../../hooks/useSnippets';
+import { snippetService } from '../../services/snippetService';
+
 const SearchPage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialQuery = searchParams.get('q') || '';
+  
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
+  const [realSnippets, setRealSnippets] = useState<any[]>([]);
+  const { favoriteSnippetIds } = useSnippets();
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch real snippets based on search query
+  React.useEffect(() => {
+    const fetchResults = async () => {
+      setIsLoading(true);
+      try {
+        const data = await snippetService.getAllSnippets(searchQuery ? { search: searchQuery } : undefined);
+        setRealSnippets(data || []);
+      } catch (err) {
+        console.error('Failed to search snippets', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    const timeoutId = setTimeout(() => {
+      fetchResults();
+      // Update URL query string
+      if (searchQuery) {
+        setSearchParams({ q: searchQuery });
+      } else {
+        setSearchParams({});
+      }
+    }, 500); // debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, setSearchParams]);
 
   const handleClearFilters = () => {
     setFilters(INITIAL_FILTERS);
   };
 
   const filteredSnippets = useMemo(() => {
-    let result = DUMMY_SNIPPETS;
+    let result = realSnippets.map((s: any): SnippetResult => ({
+      id: s._id,
+      title: s.title,
+      language: s.language,
+      category: s.category,
+      tags: s.tags || [],
+      isFavorite: favoriteSnippetIds?.includes(s._id) || false,
+      visibility: s.isPublic ? 'public' : 'private',
+      updatedAt: new Date(s.updatedAt || s.createdAt).toLocaleDateString()
+    }));
 
-    // Search query filter
+    // Search query filter (local fallback just in case)
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(s => 
@@ -125,14 +120,13 @@ const SearchPage = () => {
     result = [...result].sort((a, b) => {
       if (filters.sort === 'a-z') return a.title.localeCompare(b.title);
       if (filters.sort === 'z-a') return b.title.localeCompare(a.title);
-      // Mocking newest/oldest for dummy data
       if (filters.sort === 'newest') return -1; 
       if (filters.sort === 'oldest') return 1;
       return 0;
     });
 
     return result;
-  }, [searchQuery, filters]);
+  }, [searchQuery, filters, realSnippets, favoriteSnippetIds]);
 
   return (
     <motion.div

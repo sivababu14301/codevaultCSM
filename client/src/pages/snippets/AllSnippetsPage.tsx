@@ -7,6 +7,7 @@ import { SearchBar } from '../../components/snippets/SearchBar';
 import { FilterPanel } from '../../components/snippets/FilterPanel';
 import { useSnippets } from '../../hooks/useSnippets';
 import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
 
 export const AllSnippetsPage: React.FC = () => {
   const { snippets, toggleFavorite, fetchSnippets } = useSnippets();
@@ -19,7 +20,20 @@ export const AllSnippetsPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [visibility, setVisibility] = useState<'all' | 'public' | 'private'>('all');
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
   const { user } = useAuth();
+
+  React.useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/categories');
+        setDbCategories(res.data);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Sync state with URL when URL changes
   React.useEffect(() => {
@@ -31,12 +45,13 @@ export const AllSnippetsPage: React.FC = () => {
   }, [searchParams]);
 
   React.useEffect(() => {
-    fetchSnippets({ visibility });
-    return () => {
-      // Reset context to default when leaving page
-      fetchSnippets();
-    };
-  }, [visibility, fetchSnippets]);
+    // Add a small delay/debounce for API calls when typing
+    const timeoutId = setTimeout(() => {
+      fetchSnippets({ visibility, query: search });
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [visibility, search, fetchSnippets]);
 
   // Sync URL when state changes
   const handleSearchChange = (val: string) => {
@@ -51,16 +66,18 @@ export const AllSnippetsPage: React.FC = () => {
   const filteredSnippets = React.useMemo(() => {
     return snippets
       .filter(snippet => {
-        const matchesSearch = search === '' || 
-          snippet.title.toLowerCase().includes(search.toLowerCase()) || 
-          (snippet.description && snippet.description.toLowerCase().includes(search.toLowerCase())) ||
-          snippet.tags.some(t => t.toLowerCase().includes(search.toLowerCase()));
-        
         const matchesLanguage = language === 'All' || snippet.language === language;
-        const matchesCategory = category === 'All' || snippet.categoryId === category || snippet.category === category;
+        
+        const categoryObj = dbCategories.find(c => c.id === category);
+        const categoryName = categoryObj ? categoryObj.name : category;
+        const matchesCategory = category === 'All' || 
+                                snippet.categoryId === category || 
+                                snippet.category === categoryName || 
+                                snippet.language?.toLowerCase() === categoryName?.toLowerCase();
+                                
         const matchesPinned = !showPinnedOnly || user?.pinnedSnippets?.includes(snippet._id);
         
-        return matchesSearch && matchesLanguage && matchesCategory && matchesPinned;
+        return matchesLanguage && matchesCategory && matchesPinned;
       })
       .sort((a, b) => {
         if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -151,6 +168,7 @@ export const AllSnippetsPage: React.FC = () => {
               languageFilter={language} setLanguageFilter={setLanguage}
               categoryFilter={category} setCategoryFilter={setCategory}
               sortBy={sortBy} setSortBy={setSortBy}
+              dbCategories={dbCategories}
             />
           </div>
         </div>

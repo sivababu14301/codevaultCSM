@@ -3,12 +3,23 @@ import { Snippet, SearchFilters } from '../types';
 
 export const snippetService = {
   getAllSnippets: async (filters?: SearchFilters) => {
-    const response = await api.get('/snippets', { params: filters });
+    // If 'query' is used in frontend but we need 'search' on backend, we can map it or just use 'search'
+    const params = { ...filters };
+    if (params.query) {
+      params.search = params.query;
+      delete params.query;
+    }
+    const response = await api.get('/snippets', { params });
     return response.data;
   },
 
   getSnippetById: async (id: string) => {
     const response = await api.get(`/snippets/${id}`);
+    return response.data;
+  },
+
+  getSharedSnippet: async (id: string) => {
+    const response = await api.get(`/snippets/shared/${id}`);
     return response.data;
   },
 
@@ -27,10 +38,6 @@ export const snippetService = {
     return response.data;
   },
 
-  toggleFavorite: async (id: string) => {
-    const response = await api.post(`/snippets/${id}/favorite`);
-    return response.data;
-  },
 
   getCategories: async () => {
     const response = await api.get('/categories');

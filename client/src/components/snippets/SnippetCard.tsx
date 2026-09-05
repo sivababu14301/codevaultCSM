@@ -9,6 +9,7 @@ import { TagChip } from './TagChip';
 import { AddToCollectionModal } from '../collections/AddToCollectionModal';
 import { useCollections } from '../../hooks/useCollections';
 import { useAuth } from '../../hooks/useAuth';
+import { userService } from '../../services/userService';
 
 interface SnippetCardProps {
   snippet: Snippet;
@@ -20,9 +21,9 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({ snippet, onToggleFavor
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const { collections } = useCollections();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { toast } = useToast();
-  const { duplicateSnippet } = useSnippets();
+  const { favoriteSnippetIds } = useSnippets();
 
   const snippetCollection = collections.find(c => {
     const snips = Array.isArray(c.snippets) ? c.snippets : [];
@@ -41,24 +42,22 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({ snippet, onToggleFavor
     }
   };
 
-  const handleDuplicate = async (e: React.MouseEvent) => {
+  const handleTogglePin = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isDuplicating) return;
-    
-    setIsDuplicating(true);
+    if (!user) return;
     try {
-      await duplicateSnippet(snippet._id);
-      toast('Snippet duplicated successfully!', 'success');
+      const response = await userService.togglePinSnippet(snippet._id);
+      updateUser({ pinnedSnippets: response.pinnedSnippets });
+      const isNowPinned = response.pinnedSnippets.includes(snippet._id);
+      toast(isNowPinned ? 'Snippet pinned' : 'Snippet unpinned', 'success');
     } catch (err) {
-      toast('Failed to duplicate snippet', 'error');
-    } finally {
-      setIsDuplicating(false);
+      toast('Failed to toggle pin', 'error');
     }
   };
 
   const authorName = typeof snippet.author === 'object' ? snippet.author.username : snippet.author;
-  const isFavorited = snippet.isFavorited;
+  const isFavorited = favoriteSnippetIds?.includes(snippet._id) ?? false;
 
   return (
     <div className="bg-white rounded-2xl p-5 flex flex-col justify-between h-full border border-slate-200 hover:border-purple-300 hover:shadow-md transition-all duration-300 group">
@@ -138,14 +137,17 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({ snippet, onToggleFavor
             >
               <Star className={`w-4 h-4 ${isFavorited ? 'fill-amber-500' : ''}`} />
             </button>
-            {(snippet.isPublic || user?._id === (typeof snippet.author === 'object' ? snippet.author._id : snippet.author)) && (
+            {user && (
               <button
-                onClick={handleDuplicate}
-                disabled={isDuplicating}
-                className="p-2 rounded-xl transition-colors bg-slate-50 text-slate-400 hover:text-blue-500 hover:bg-blue-50 disabled:opacity-50"
-                title="Duplicate / Save as Copy"
+                onClick={handleTogglePin}
+                className={`p-2 rounded-xl transition-colors ${
+                  user.pinnedSnippets?.includes(snippet._id) 
+                    ? 'bg-purple-50 text-purple-600' 
+                    : 'bg-slate-50 text-slate-400 hover:text-purple-600 hover:bg-purple-50'
+                }`}
+                title={user.pinnedSnippets?.includes(snippet._id) ? "Unpin Snippet" : "Pin Snippet"}
               >
-                <CopyPlus className="w-4 h-4" />
+                <Pin className={`w-4 h-4 ${user.pinnedSnippets?.includes(snippet._id) ? 'fill-purple-600' : ''}`} />
               </button>
             )}
           </div>

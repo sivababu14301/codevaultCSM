@@ -1,7 +1,6 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import { ProfileCard } from '../../components/profile/ProfileCard';
-import { AvatarUpload } from '../../components/profile/AvatarUpload';
 import { ProfileForm } from '../../components/profile/ProfileForm';
 import { ChangePasswordForm } from '../../components/profile/ChangePasswordForm';
 import { AccountInfo } from '../../components/profile/AccountInfo';
@@ -31,7 +30,6 @@ export const ProfilePage: React.FC = () => {
             title="General Information" 
             description="Update your basic profile information and how others see you."
           >
-            <AvatarUpload name={user?.name || "Developer"} />
             <ProfileForm />
           </ProfileCard>
 

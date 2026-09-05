@@ -25,7 +25,7 @@ const itemVariants = {
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const { snippets } = useSnippets();
+  const { snippets, favoriteSnippetIds } = useSnippets();
   const { collections } = useCollections();
   const navigate = useNavigate();
   const [activityRange, setActivityRange] = React.useState('This Week');
@@ -77,7 +77,7 @@ export const DashboardPage: React.FC = () => {
   const recentActivity = React.useMemo(() => {
     const activities = [
       ...snippets.map(s => ({ id: s._id, action: 'Created snippet', target: s.title, time: s.createdAt, type: 'create' })),
-      ...snippets.filter(s => s.isFavorited).map(s => ({ id: s._id + '_fav', action: 'Favorited snippet', target: s.title, time: s.updatedAt || s.createdAt, type: 'favorite' })),
+      ...snippets.filter(s => favoriteSnippetIds?.includes(s._id)).map(s => ({ id: s._id + '_fav', action: 'Favorited snippet', target: s.title, time: s.updatedAt || s.createdAt, type: 'favorite' })),
       ...collections.map(c => ({ id: c._id, action: 'Created collection', target: c.name, time: c.createdAt, type: 'collection' }))
     ];
     return activities
@@ -89,13 +89,15 @@ export const DashboardPage: React.FC = () => {
   const getActivityData = () => activityData; // We just use the calculated data for all ranges for now
 
   const totalSnippets = snippets.length;
-  const favoritesCount = snippets.filter(s => s.isFavorited).length;
+  const favoritesCount = favoriteSnippetIds?.length || 0;
   const collectionsCount = collections.length;
   const activityScore = (totalSnippets * 10) + (favoritesCount * 5) + (collectionsCount * 15);
 
+  const userStatus = user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown';
+
   const stats = [
     { label: 'Total Snippets', value: totalSnippets, trend: '+1 new', icon: Code, color: 'text-purple-600', bg: 'bg-purple-100', border: 'border-purple-200' },
-    { label: 'Favorites', value: favoritesCount, trend: 'Active', icon: Star, color: 'text-amber-500', bg: 'bg-amber-100', border: 'border-amber-200' },
+    { label: 'Favorites', value: favoritesCount, trend: userStatus, icon: Star, color: 'text-amber-500', bg: 'bg-amber-100', border: 'border-amber-200' },
     { label: 'Collections', value: collectionsCount, trend: 'Active', icon: Bookmark, color: 'text-blue-500', bg: 'bg-blue-100', border: 'border-blue-200' },
     { label: 'Activity Score', value: activityScore, trend: 'Growing', icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-100', border: 'border-emerald-200' }
   ];

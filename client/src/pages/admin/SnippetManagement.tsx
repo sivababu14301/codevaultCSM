@@ -66,10 +66,13 @@ export const SnippetManagement: React.FC = () => {
 
   // Filter and Search Logic
   const filteredSnippets = useMemo(() => {
+    const search = searchTerm.toLowerCase().trim();
     return snippets.filter(snippet => {
       const matchesSearch = 
-        snippet.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        snippet.author.toLowerCase().includes(searchTerm.toLowerCase());
+        !search ||
+        snippet.title.toLowerCase().includes(search) || 
+        snippet.author.toLowerCase().includes(search) ||
+        (snippet.authorEmail && snippet.authorEmail.toLowerCase().includes(search));
       
       const matchesLanguage = languageFilter === 'all' || snippet.language === languageFilter;
       const matchesVisibility = visibilityFilter === 'all' || snippet.status === visibilityFilter;

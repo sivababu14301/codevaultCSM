@@ -8,7 +8,7 @@ interface SearchBarProps {
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({ 
-  value, onChange, placeholder = "Search snippets..." 
+  value, onChange, placeholder = "Search by title, author or user ID..." 
 }) => {
   return (
     <div className="relative w-full">

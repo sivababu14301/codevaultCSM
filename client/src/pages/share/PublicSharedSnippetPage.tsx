@@ -17,7 +17,7 @@ export const PublicSharedSnippetPage: React.FC = () => {
     const fetchSharedSnippet = async () => {
       try {
         const cleanId = id?.replace('-pub', '').replace('-priv', '') || '';
-        const data = await snippetService.getSnippetById(cleanId);
+        const data = await snippetService.getSharedSnippet(cleanId);
         setSnippet(data);
       } catch (err) {
         console.error(err);

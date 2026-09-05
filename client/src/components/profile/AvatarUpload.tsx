@@ -3,14 +3,20 @@ import { Camera, Trash2 } from 'lucide-react';
 import { DeleteAvatarModal } from './DeleteAvatarModal';
 
 interface AvatarUploadProps {
-  currentAvatar?: string;
+  currentAvatar?: string | null;
   name: string;
+  onAvatarChange?: (avatar: string | null) => void;
 }
 
-export const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatar, name }) => {
+export const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatar, name, onAvatarChange }) => {
   const [avatar, setAvatar] = useState<string | null>(currentAvatar || null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync with currentAvatar prop if it changes externally
+  React.useEffect(() => {
+    setAvatar(currentAvatar || null);
+  }, [currentAvatar]);
 
   const getInitials = (name: string) => {
     return name
@@ -26,7 +32,9 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatar, name 
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatar(reader.result as string);
+        const result = reader.result as string;
+        setAvatar(result);
+        if (onAvatarChange) onAvatarChange(result);
       };
       reader.readAsDataURL(file);
     }
@@ -90,6 +98,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatar, name 
         onClose={() => setIsModalOpen(false)}
         onConfirm={() => {
           setAvatar(null);
+          if (onAvatarChange) onAvatarChange(null);
           setIsModalOpen(false);
         }}
       />
