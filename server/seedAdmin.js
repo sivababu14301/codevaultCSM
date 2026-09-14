@@ -4,7 +4,7 @@ const User = require('./models/User');
 
 const seedAdmin = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/codevault');
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('MongoDB connected...');
 
     const adminEmail = 'CodeVaultadmin@gmail.com';

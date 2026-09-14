@@ -1,17 +1,27 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(500).json({ message: 'Database connection failed. Please verify MONGO_URI credentials in server/.env' });
+  }
+
   const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'Please provide name, email, and password' });
+  }
 
   try {
     const normalizedEmail = email.trim().toLowerCase();
     
     // Validate that someone isn't trying to register the admin email
+
     if (normalizedEmail === 'codevaultadmin@gmail.com') {
       return res.status(400).json({ message: 'Cannot register with this email' });
     }
@@ -19,12 +29,25 @@ const registerUser = async (req, res) => {
     const userExists = await User.findOne({ email: new RegExp(`^${normalizedEmail}$`, 'i') });
 
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    let baseUsername = (name ? name.toLowerCase().replace(/[^a-z0-9]/g, '') : '') || normalizedEmail.split('@')[0].replace(/[^a-z0-9]/g, '') || 'user';
+    let username = baseUsername;
+    let count = 1;
+    while (await User.findOne({ username })) {
+      username = `${baseUsername}${Math.floor(100 + Math.random() * 900)}`;
+      count++;
+      if (count > 5) {
+        username = `${baseUsername}_${Date.now().toString().slice(-4)}`;
+        break;
+      }
     }
 
     const user = await User.create({
       name,
       email: normalizedEmail,
+      username,
       password,
       role: 'user', // Always default to user, never admin
     });
@@ -49,10 +72,18 @@ const registerUser = async (req, res) => {
       res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
-    if (error.name === 'MongoNetworkError' || error.name === 'MongoServerSelectionError') {
-      return res.status(500).json({ message: 'Unable to connect to server. Please try again.' });
+    console.error('Registration error:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Email or username already exists' });
     }
-    res.status(500).json({ message: 'Server error', error: error.message });
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((val) => val.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    if (error.name === 'MongoNetworkError' || error.name === 'MongoServerSelectionError') {
+      return res.status(500).json({ message: 'Unable to connect to database. Please check connection.' });
+    }
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 };
 

@@ -4,7 +4,7 @@ import { Snippet, SearchFilters } from '../types';
 export const snippetService = {
   getAllSnippets: async (filters?: SearchFilters) => {
     // If 'query' is used in frontend but we need 'search' on backend, we can map it or just use 'search'
-    const params = { ...filters };
+    const params: Record<string, any> = { ...filters };
     if (params.query) {
       params.search = params.query;
       delete params.query;

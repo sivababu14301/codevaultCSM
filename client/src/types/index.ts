@@ -108,6 +108,7 @@ export interface Collection {
 
 export interface SearchFilters {
   query?: string;
+  search?: string;
   language?: string;
   category?: string;
   tags?: string[];

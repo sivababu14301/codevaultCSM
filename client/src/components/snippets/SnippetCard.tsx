@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Copy, Check, Eye, User, Calendar, Lock, Globe, Share2, DownloadCloud, FolderPlus, Folder, Pin, CopyPlus } from 'lucide-react';
+import { Star, Copy, Check, Eye, User, Calendar, Lock, Globe, Share2, DownloadCloud, FolderPlus, Folder, Pin } from 'lucide-react';
 import { Snippet } from '../../types';
 import { useToast } from '../ui/Toast';
 import { useSnippets } from '../../hooks/useSnippets';
@@ -18,7 +18,6 @@ interface SnippetCardProps {
 
 export const SnippetCard: React.FC<SnippetCardProps> = ({ snippet, onToggleFavorite }) => {
   const [copied, setCopied] = useState(false);
-  const [isDuplicating, setIsDuplicating] = useState(false);
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const { collections } = useCollections();
   const { user, updateUser } = useAuth();
