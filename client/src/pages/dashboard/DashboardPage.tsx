@@ -32,9 +32,9 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [activityRange, setActivityRange] = React.useState('This Week');
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
-  const { showToast } = useToast();
+  const { toast: showToast } = useToast();
 
-  const handleCreateCollection = async (data: { name: string; description: string; isPublic: boolean }) => {
+  const handleCreateCollection = async (data: { name: string; description?: string; isPublic: boolean }) => {
     try {
       await addCollection(data);
       setIsCreateModalOpen(false);

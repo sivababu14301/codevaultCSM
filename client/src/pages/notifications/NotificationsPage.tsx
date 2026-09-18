@@ -22,7 +22,6 @@ export const NotificationsPage: React.FC = () => {
       return notification.category === filter;
     });
   }, [notifications, filter]);
-
   const handleMarkRead = (id: string) => {
     setNotifications(prev => 
       prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
@@ -36,7 +35,6 @@ export const NotificationsPage: React.FC = () => {
   const handleDelete = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
-
   const handleUpdateSetting = (key: keyof SettingsType, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
