@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Search, Plus, User as UserIcon, LogOut, Shield, Bell, Menu } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
@@ -22,12 +22,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
     setSearchQuery(searchParams.get('q') || '');
   }, [searchParams]);
 
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    const q = encodeURIComponent(searchQuery.trim());
+    if (isAdminRoute) {
+      navigate(searchQuery.trim() ? `/admin/snippets?q=${q}` : '/admin/snippets');
     } else {
-      navigate('/search');
+      navigate(searchQuery.trim() ? `/search?q=${q}` : '/search');
     }
   };
   

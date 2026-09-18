@@ -1,6 +1,6 @@
 import React from 'react';
-import { Shield, Download } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Shield } from 'lucide-react';
+import { ExportReport } from './reports/ExportReport';
 
 export const AdminHeader: React.FC = () => {
   return (
@@ -16,9 +16,9 @@ export const AdminHeader: React.FC = () => {
       </div>
       
       <div className="flex items-center gap-3">
-        <Button variant="outline" className="hidden sm:flex" icon={<Download className="w-4 h-4" />}>
-          Export Report
-        </Button>
+        <div className="hidden sm:block">
+          <ExportReport />
+        </div>
       </div>
     </div>
   );

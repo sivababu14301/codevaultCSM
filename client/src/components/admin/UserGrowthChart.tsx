@@ -11,6 +11,20 @@ import {
 import { Card } from '../ui/Card';
 import { useAdminAnalytics } from '../../context/AdminAnalyticsContext';
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-slate-900 p-3 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800">
+        <p className="text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+        <p className="text-slate-900 dark:text-white font-medium">
+          {payload[0].value} Users
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const UserGrowthChart: React.FC = () => {
   const { data, isLoading } = useAdminAnalytics();
   if (isLoading || !data) return <div className="p-4">Loading chart...</div>;
@@ -39,15 +53,7 @@ export const UserGrowthChart: React.FC = () => {
               dx={-10}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: 'var(--tw-colors-slate-900)',
-                border: 'none',
-                borderRadius: '12px',
-                color: '#fff',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-              }}
-              itemStyle={{ color: '#fff', fontWeight: 500 }}
-              labelStyle={{ color: '#94A3B8', marginBottom: '4px' }}
+              content={<CustomTooltip />}
               cursor={{ stroke: '#94A3B8', strokeWidth: 1, strokeDasharray: '4 4' }}
             />
             <Line

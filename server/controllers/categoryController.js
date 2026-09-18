@@ -17,6 +17,7 @@ const getPublicCategories = async (req, res) => {
         iconName: c.iconName,
         color: c.color,
         bgColor: c.bgColor,
+        type: c.type,
         snippetCount: count
       };
     }));

@@ -6,12 +6,17 @@ const {
   getAllCategories, createCategory, updateCategory, deleteCategory,
   getAnalytics, getMostSharedReport
 } = require('../controllers/adminController');
+const { getAdminSettings, updateAdminSettings } = require('../controllers/adminSettingsController');
 const { protect } = require('../middleware/authMiddleware');
 const { admin } = require('../middleware/adminMiddleware');
 
 // Analytics Route
 router.get('/analytics', protect, admin, getAnalytics);
 router.get('/reports/most-shared', protect, admin, getMostSharedReport);
+
+// Global Settings Route
+router.get('/settings', protect, admin, getAdminSettings);
+router.put('/settings', protect, admin, updateAdminSettings);
 
 // User Management Routes
 router.get('/users', protect, admin, getAllUsers);

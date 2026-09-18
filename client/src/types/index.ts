@@ -11,6 +11,8 @@ export interface User {
   website?: string;
   skills?: string[];
   pinnedSnippets?: string[];
+  defaultProgrammingLanguage?: string;
+  defaultTheme?: string;
   createdAt?: string;
   updatedAt?: string;
 }

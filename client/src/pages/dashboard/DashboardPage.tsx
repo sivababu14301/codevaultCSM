@@ -9,6 +9,8 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useSnippets } from '../../hooks/useSnippets';
 import { useCollections } from '../../hooks/useCollections';
+import { CreateCollectionModal } from '../../components/collections/CreateCollectionModal';
+import { useToast } from '../../components/ui/Toast';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -26,9 +28,23 @@ const itemVariants = {
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { snippets, favoriteSnippetIds } = useSnippets();
-  const { collections } = useCollections();
+  const { collections, addCollection } = useCollections();
   const navigate = useNavigate();
   const [activityRange, setActivityRange] = React.useState('This Week');
+  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+  const { showToast } = useToast();
+
+  const handleCreateCollection = async (data: { name: string; description: string; isPublic: boolean }) => {
+    try {
+      await addCollection(data);
+      setIsCreateModalOpen(false);
+      showToast('Collection created successfully.', 'success');
+    } catch (error) {
+      showToast('Failed to create collection', 'error');
+      // Re-throw to let the modal know there was an error (if it handles it)
+      throw error;
+    }
+  };
 
   const activityData = React.useMemo(() => {
     const counts = [0, 0, 0, 0, 0, 0, 0];
@@ -251,7 +267,7 @@ export const DashboardPage: React.FC = () => {
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/collections/new')}
+                onClick={() => setIsCreateModalOpen(true)}
                 className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
               >
                 <Folder className="w-6 h-6 mb-2 text-blue-300" />
@@ -337,6 +353,12 @@ export const DashboardPage: React.FC = () => {
 
         </motion.div>
       </div>
+
+      <CreateCollectionModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onSubmit={handleCreateCollection} 
+      />
     </motion.div>
   );
 };

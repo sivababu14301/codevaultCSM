@@ -5,10 +5,41 @@ import { useSnippets } from '../../hooks/useSnippets';
 import { SnippetCard } from '../../components/snippets/SnippetCard';
 import { Button } from '../../components/ui/Button';
 
+import { api } from '../../services/api';
+
 export const SnippetsListPage: React.FC = () => {
   const { snippets } = useSnippets();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('all');
+
+  const [dbLanguages, setDbLanguages] = useState<{name: string, original: string}[]>([]);
+  const [languagesLoading, setLanguagesLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        setLanguagesLoading(true);
+        const res = await api.get('/categories');
+        const langCats = res.data;
+        const uniqueLangs = new Map<string, string>();
+        langCats.forEach((c: any) => {
+          const lower = c.name.toLowerCase();
+          if (!uniqueLangs.has(lower)) {
+            uniqueLangs.set(lower, c.name);
+          }
+        });
+        setDbLanguages(Array.from(uniqueLangs.entries()).map(([lower, original]) => ({
+          name: lower,
+          original
+        })));
+      } catch (error) {
+        console.error('Failed to fetch languages', error);
+      } finally {
+        setLanguagesLoading(false);
+      }
+    };
+    fetchLanguages();
+  }, []);
 
   const filteredSnippets = snippets.filter((s) => {
     const matchesSearch = s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,11 +82,10 @@ export const SnippetsListPage: React.FC = () => {
             onChange={(e) => setSelectedLanguage(e.target.value)}
             className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
           >
-            <option value="all">All Languages</option>
-            <option value="typescript">TypeScript</option>
-            <option value="javascript">JavaScript</option>
-            <option value="css">CSS</option>
-            <option value="python">Python</option>
+            <option value="all">{languagesLoading ? 'Loading...' : 'All Languages'}</option>
+            {dbLanguages.map(l => (
+              <option key={l.name} value={l.name}>{l.original}</option>
+            ))}
           </select>
         </div>
       </div>

@@ -11,7 +11,7 @@ const getCommunitySnippets = async (req, res) => {
     // Base query: only public snippets
     let query = { isPublic: true };
 
-    if (language) query.language = language;
+    if (language) query.language = { $regex: `^${language}$`, $options: 'i' };
     if (category) query.category = category;
     if (search) {
       // Find matching users (author search)

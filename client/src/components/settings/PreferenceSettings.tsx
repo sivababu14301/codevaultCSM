@@ -4,6 +4,7 @@ import { SettingsCard } from './SettingsCard';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 import { DropdownSelect } from '../ui/DropdownSelect';
 import { PreferenceSettings as PreferenceSettingsType } from '../../types/settings';
+import { api } from '../../services/api';
 
 interface PreferenceSettingsProps {
   settings: PreferenceSettingsType;
@@ -11,26 +12,26 @@ interface PreferenceSettingsProps {
 }
 
 export const PreferenceSettings: React.FC<PreferenceSettingsProps> = ({ settings, onChange }) => {
-  const languageOptions = [
-    { value: 'javascript', label: 'JavaScript' },
-    { value: 'typescript', label: 'TypeScript' },
-    { value: 'react', label: 'React' },
-    { value: 'node.js', label: 'Node.js' },
-    { value: 'python', label: 'Python' },
-    { value: 'html', label: 'HTML' },
-    { value: 'css', label: 'CSS' },
-    { value: 'go', label: 'Go' },
-    { value: 'rust', label: 'Rust' },
-    { value: 'java', label: 'Java' },
-    { value: 'c++', label: 'C++' },
-    { value: 'c#', label: 'C#' },
-    { value: 'php', label: 'PHP' },
-    { value: 'ruby', label: 'Ruby' },
-    { value: 'swift', label: 'Swift' },
-    { value: 'kotlin', label: 'Kotlin' },
-    { value: 'sql', label: 'SQL' },
-    { value: 'shell', label: 'Shell' },
-  ];
+  const [languageOptions, setLanguageOptions] = React.useState<{value: string, label: string}[]>([]);
+
+  React.useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/categories');
+        if (res.data && Array.isArray(res.data)) {
+          // Normal users hit /categories which returns only active categories
+          const options = res.data.map((cat: any) => ({
+            value: cat.name.toLowerCase(),
+            label: cat.name
+          }));
+          setLanguageOptions(options);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories for preferences', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   return (
     <SettingsCard

@@ -5,13 +5,26 @@ import { Snippet } from '../../types';
 import { ExportCard } from '../../components/export/ExportCard';
 import { EmptyExportState } from '../../components/export/EmptyExportState';
 import { ExportDialog } from '../../components/export/ExportDialog';
+import { SearchWithButton } from '../../components/ui/SearchWithButton';
 
 export const ExportPage: React.FC = () => {
   const [selectedSnippet, setSelectedSnippet] = useState<Snippet | null>(null);
   const { snippets } = useSnippets();
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Use real snippets for the export dashboard
   const exportableSnippets = snippets;
+
+  const filteredExportableSnippets = exportableSnippets.filter(s => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      s.title.toLowerCase().includes(term) ||
+      s.language.toLowerCase().includes(term) ||
+      s.description.toLowerCase().includes(term) ||
+      s.tags.some(tag => tag.toLowerCase().includes(term))
+    );
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -26,12 +39,26 @@ export const ExportPage: React.FC = () => {
         </p>
       </div>
 
+      {exportableSnippets.length > 0 && (
+        <SearchWithButton 
+          placeholder="Search snippets..." 
+          onSearch={setSearchTerm} 
+          onClear={() => setSearchTerm('')} 
+        />
+      )}
+
       {/* Grid or Empty State */}
-      {exportableSnippets.length === 0 ? (
-        <EmptyExportState />
+      {filteredExportableSnippets.length === 0 ? (
+        searchTerm ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900">No snippets found.</h3>
+          </div>
+        ) : (
+          <EmptyExportState />
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {exportableSnippets.map((snippet) => (
+          {filteredExportableSnippets.map((snippet) => (
             <ExportCard 
               key={snippet._id} 
               snippet={snippet} 

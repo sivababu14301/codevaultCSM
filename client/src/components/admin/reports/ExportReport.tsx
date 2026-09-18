@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DownloadCloud, FileText, FileSpreadsheet } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useAdminAnalytics } from '../../../context/AdminAnalyticsContext';
 
@@ -32,7 +32,7 @@ export const ExportReport: React.FC = () => {
     csvContent += "--- Language & Category Stats ---\n";
     csvContent += "Category/Language,Count\n";
     data.categoryStats.forEach(stat => {
-      csvContent += `"${stat._id}",${stat.count}\n`;
+      csvContent += `"${stat.name}",${stat.count}\n`;
     });
 
     // Create and download file
@@ -51,10 +51,10 @@ export const ExportReport: React.FC = () => {
     <div className="relative">
       <Button 
         onClick={() => setIsOpen(!isOpen)}
-        variant="primary"
+        variant="outline"
         className="px-4 py-2"
+        icon={<Download className="w-4 h-4" />}
       >
-        <DownloadCloud className="w-4 h-4 mr-2" />
         Export Report
       </Button>
 

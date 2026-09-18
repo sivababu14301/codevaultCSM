@@ -51,5 +51,15 @@ export const adminService = {
   getAnalytics: async () => {
     const res = await api.get('/admin/analytics');
     return res.data;
+  },
+
+  // Settings
+  getSettings: async () => {
+    const res = await api.get('/admin/settings');
+    return res.data;
+  },
+  updateSettings: async (settings: any) => {
+    const res = await api.put('/admin/settings', settings);
+    return res.data;
   }
 };

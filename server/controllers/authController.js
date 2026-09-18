@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Setting = require('../models/Setting');
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
@@ -11,10 +12,10 @@ const registerUser = async (req, res) => {
     return res.status(500).json({ message: 'Database connection failed. Please verify MONGO_URI credentials in server/.env' });
   }
 
-  const { name, email, password } = req.body;
+  const { name, email, password, rememberAccessKey } = req.body;
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: 'Please provide name, email, and password' });
+  if (!name || !email || !password || !rememberAccessKey) {
+    return res.status(400).json({ message: 'Please provide name, email, password, and remember access key' });
   }
 
   try {
@@ -44,12 +45,30 @@ const registerUser = async (req, res) => {
       }
     }
 
+    // Get Global Admin Defaults
+    let defaultLanguage = 'javascript';
+    let defaultTheme = 'light';
+    
+    const settings = await Setting.find({});
+    const langSetting = settings.find(s => s.key === 'defaultProgrammingLanguage');
+    const themeSetting = settings.find(s => s.key === 'defaultTheme');
+    
+    if (langSetting) {
+      defaultLanguage = langSetting.value;
+    }
+    if (themeSetting) {
+      defaultTheme = themeSetting.value;
+    }
+
     const user = await User.create({
       name,
       email: normalizedEmail,
       username,
       password,
       role: 'user', // Always default to user, never admin
+      defaultProgrammingLanguage: defaultLanguage,
+      defaultTheme: defaultTheme,
+      rememberAccessKey: crypto.createHash('sha256').update(rememberAccessKey).digest('hex'),
     });
 
     if (user) {
@@ -66,6 +85,8 @@ const registerUser = async (req, res) => {
         pinnedSnippets: user.pinnedSnippets,
         role: user.role,
         status: user.status,
+        defaultProgrammingLanguage: user.defaultProgrammingLanguage,
+        defaultTheme: user.defaultTheme,
         token: generateToken(user._id, user.email, user.role),
       });
     } else {
@@ -126,6 +147,8 @@ const loginUser = async (req, res) => {
           pinnedSnippets: adminUser.pinnedSnippets,
           role: 'admin',
           status: adminUser.status,
+          defaultProgrammingLanguage: adminUser.defaultProgrammingLanguage,
+          defaultTheme: adminUser.defaultTheme,
           token: generateToken(adminUser._id, adminUser.email, 'admin'),
         });
       } else {
@@ -149,6 +172,8 @@ const loginUser = async (req, res) => {
         pinnedSnippets: user.pinnedSnippets,
         role: user.role,
         status: user.status,
+        defaultProgrammingLanguage: user.defaultProgrammingLanguage,
+        defaultTheme: user.defaultTheme,
         token: generateToken(user._id, user.email, user.role),
       });
     } else {
@@ -183,6 +208,8 @@ const getMe = async (req, res) => {
         pinnedSnippets: user.pinnedSnippets,
         role: user.role,
         status: user.status,
+        defaultProgrammingLanguage: user.defaultProgrammingLanguage,
+        defaultTheme: user.defaultTheme,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -209,6 +236,8 @@ const updateUserProfile = async (req, res) => {
       if (req.body.website !== undefined) user.website = req.body.website;
       if (req.body.avatarUrl !== undefined) user.avatarUrl = req.body.avatarUrl;
       if (req.body.skills !== undefined) user.skills = req.body.skills;
+      if (req.body.defaultProgrammingLanguage !== undefined) user.defaultProgrammingLanguage = req.body.defaultProgrammingLanguage;
+      if (req.body.defaultTheme !== undefined) user.defaultTheme = req.body.defaultTheme;
 
       if (req.body.password) {
         user.password = req.body.password;
@@ -229,6 +258,8 @@ const updateUserProfile = async (req, res) => {
         pinnedSnippets: updatedUser.pinnedSnippets,
         role: updatedUser.role,
         status: updatedUser.status,
+        defaultProgrammingLanguage: updatedUser.defaultProgrammingLanguage,
+        defaultTheme: updatedUser.defaultTheme,
         token: generateToken(updatedUser._id, updatedUser.email, updatedUser.role),
       });
     } else {
@@ -242,36 +273,34 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-// @desc    Forgot Password
-// @route   POST /api/auth/forgot-password
+// @desc    Verify Remember Access Key
+// @route   POST /api/auth/verify-reset-access
 // @access  Public
-const forgotPassword = async (req, res) => {
-  const { email } = req.body;
+const verifyResetAccess = async (req, res) => {
+  const { rememberAccessKey } = req.body;
+  if (!rememberAccessKey) {
+    return res.status(400).json({ message: 'Please provide your Remember Access key' });
+  }
+
   try {
-    const user = await User.findOne({ email: new RegExp(`^${email.trim()}$`, 'i') });
+    const hashedKey = crypto.createHash('sha256').update(rememberAccessKey).digest('hex');
+    const user = await User.findOne({ rememberAccessKey: hashedKey });
 
     if (!user) {
-      return res.status(404).json({ message: 'There is no user with that email' });
+      return res.status(404).json({ message: 'Invalid Remember Access key.' });
     }
 
-    // Generate token
+    // Generate short-lived reset authorization token
     const resetToken = crypto.randomBytes(20).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-    // Hash token and set to resetPasswordToken field
-    user.resetPasswordToken = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
-
-    // Set expire (10 minutes)
-    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
-
+    user.resetAuthToken = hashedToken;
+    user.resetAuthExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save();
 
-    // In a real app, send email here. For now, we return the token directly.
-    res.status(200).json({ 
-      message: 'Email sent', 
-      resetToken // Returned for dev purposes
+    res.status(200).json({
+      message: 'Access verified',
+      resetAuthToken: resetToken
     });
   } catch (error) {
     console.error(error);
@@ -279,41 +308,50 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// @desc    Reset Password
-// @route   PUT /api/auth/reset-password/:token
+// @desc    Reset Password with Auth Token
+// @route   POST /api/auth/reset-password
 // @access  Public
 const resetPassword = async (req, res) => {
-  const { password } = req.body;
+  const { resetAuthToken, newPassword } = req.body;
   
+  if (!resetAuthToken || !newPassword) {
+    return res.status(400).json({ message: 'Missing token or password' });
+  }
+
   try {
-    // Get hashed token
-    const resetPasswordToken = crypto
-      .createHash('sha256')
-      .update(req.params.token)
-      .digest('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetAuthToken).digest('hex');
 
     const user = await User.findOne({
-      resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() },
+      resetAuthToken: hashedToken,
+      resetAuthExpire: { $gt: Date.now() },
     }).select('+password');
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired token' });
+      return res.status(400).json({ message: 'Reset session expired. Please start again.' });
     }
 
-    // Set new password
-    user.password = password;
+    // Ensure password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    // Set new password (pre-save hook will hash it)
+    user.password = newPassword;
+    user.resetAuthToken = undefined;
+    user.resetAuthExpire = undefined;
+    
+    // Also clear legacy tokens if they exist
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+
     await user.save();
 
     res.status(200).json({
       message: 'Password reset successfully',
-      token: generateToken(user._id, user.email, user.role)
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: 'Unable to reset password. Please try again.' });
   }
 };
 
@@ -322,6 +360,6 @@ module.exports = {
   loginUser,
   getMe,
   updateUserProfile,
-  forgotPassword,
+  verifyResetAccess,
   resetPassword,
 };

@@ -11,6 +11,7 @@ interface CodeEditorProps {
   onLanguageChange?: (language: string) => void;
   onSave?: (code: string, language: string) => void;
   onCancel?: () => void;
+  availableLanguages?: string[];
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({ 
@@ -19,7 +20,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onChange,
   onLanguageChange,
   onSave,
-  onCancel
+  onCancel,
+  availableLanguages
 }) => {
   const [code, setCode] = useState(initialCode);
   const [language, setLanguage] = useState(initialLanguage);
@@ -79,7 +81,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       'JSON': 'json',
       'Markdown': 'markdown'
     };
-    return map[lang] || 'plaintext';
+    return map[lang] || lang.toLowerCase();
   };
 
   return (
@@ -87,7 +89,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'h-[600px] relative'
     }`}>
       <EditorToolbar 
-        language={language} setLanguage={setLanguage}
+        language={language} setLanguage={setLanguage} availableLanguages={availableLanguages}
         theme={theme} setTheme={setTheme}
         fontSize={fontSize} setFontSize={setFontSize}
         wordWrap={wordWrap} setWordWrap={setWordWrap}

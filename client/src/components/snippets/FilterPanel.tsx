@@ -21,8 +21,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   setSortBy,
   dbCategories
 }) => {
-  const languages = ['All', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'HTML', 'CSS', 'Go', 'Rust', 'Java', 'SQL'];
   
+
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -38,7 +38,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             onChange={(e) => setLanguageFilter(e.target.value)}
             className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors cursor-pointer"
           >
-            {languages.map(lang => (
+            <option value="All">All</option>
+            {Array.from(new Map(dbCategories.map(c => [c.name.toLowerCase(), c.name])).values()).map(lang => (
               <option key={lang} value={lang}>{lang}</option>
             ))}
           </select>

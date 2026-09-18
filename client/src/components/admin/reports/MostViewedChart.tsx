@@ -17,41 +17,49 @@ export const MostViewedChart: React.FC<MostViewedChartProps> = ({ data }) => {
         <p className="text-sm text-slate-500 dark:text-slate-400">Snippets driving the most traffic</p>
       </div>
       <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" className="dark:stroke-[#1F2937]" />
-            <XAxis 
-              type="number" 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#64748B' }}
-              tickFormatter={(value) => value >= 1000 ? `${value / 1000}k` : value}
-            />
-            <YAxis 
-              dataKey="title" 
-              type="category"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fill: '#64748B', fontWeight: 500 }}
-              width={120}
-            />
-            <Tooltip 
-              cursor={{ fill: 'transparent' }}
-              contentStyle={{ 
-                backgroundColor: '#fff', 
-                borderRadius: '12px',
-                border: '1px solid #E2E8F0',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                color: '#0F172A'
-              }}
-            />
-            <Bar dataKey="views" radius={[0, 4, 4, 0]} barSize={24}>
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {!data || data.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-slate-500 font-medium">No viewed snippets yet</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" className="dark:stroke-[#1F2937]" />
+              <XAxis 
+                type="number" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#64748B' }}
+                tickFormatter={(value) => value >= 1000 ? `${value / 1000}k` : value}
+              />
+              <YAxis 
+                dataKey="name" 
+                type="category"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: '#64748B', fontWeight: 500 }}
+                width={120}
+                tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+              />
+              <Tooltip 
+                cursor={{ fill: 'transparent' }}
+                contentStyle={{ 
+                  backgroundColor: '#fff', 
+                  borderRadius: '12px',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  color: '#0F172A'
+                }}
+                formatter={(value: number) => [value, 'Views']}
+              />
+              <Bar dataKey="views" radius={[0, 4, 4, 0]} barSize={24}>
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </Card>
   );

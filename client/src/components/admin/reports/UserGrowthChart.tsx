@@ -7,6 +7,20 @@ interface UserGrowthChartProps {
   data: UserGrowthStat[];
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-slate-900 p-3 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800">
+        <p className="text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+        <p className="text-slate-900 dark:text-white font-medium">
+          {payload[0].value} Users
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const UserGrowthChart: React.FC<UserGrowthChartProps> = ({ data }) => {
   return (
     <Card className="p-6">
@@ -38,14 +52,7 @@ export const UserGrowthChart: React.FC<UserGrowthChartProps> = ({ data }) => {
               tickFormatter={(value) => value >= 1000 ? `${value / 1000}k` : value}
             />
             <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#fff', 
-                borderRadius: '12px',
-                border: '1px solid #E2E8F0',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                color: '#0F172A'
-              }}
-              itemStyle={{ color: '#6D5DF6', fontWeight: 600 }}
+              content={<CustomTooltip />}
             />
             <Area 
               type="monotone" 

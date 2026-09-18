@@ -4,6 +4,7 @@ import { Globe, Search, Filter, Hash, Layers } from 'lucide-react';
 import { snippetService } from '../../services/snippetService';
 import { Snippet } from '../../types';
 import { PublicSnippetCard } from '../../components/community/PublicSnippetCard';
+import { api } from '../../services/api';
 
 export const CommunityPage: React.FC = () => {
   const [snippets, setSnippets] = useState<Snippet[]>([]);
@@ -54,7 +55,45 @@ export const CommunityPage: React.FC = () => {
     }
   };
 
-  const languages = ['javascript', 'typescript', 'python', 'java', 'csharp', 'php', 'go', 'rust', 'html', 'css', 'sql'];
+  const [dbLanguages, setDbLanguages] = useState<{name: string, original: string}[]>([]);
+  const [languagesLoading, setLanguagesLoading] = useState(true);
+  const [languagesError, setLanguagesError] = useState(false);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        setLanguagesLoading(true);
+        const res = await api.get('/categories');
+        
+        const langCats = res.data;
+        
+        // Deduplicate ignoring casing
+        const uniqueLangs = new Map<string, string>();
+        langCats.forEach((c: any) => {
+          const lower = c.name.toLowerCase();
+          if (!uniqueLangs.has(lower)) {
+            uniqueLangs.set(lower, c.name);
+          }
+        });
+        
+        setDbLanguages(Array.from(uniqueLangs.entries()).map(([lower, original]) => ({
+          name: lower,
+          original
+        })));
+        setLanguagesError(false);
+      } catch (error) {
+        console.error('Failed to fetch languages', error);
+        setLanguagesError(true);
+      } finally {
+        setLanguagesLoading(false);
+      }
+    };
+    
+    fetchLanguages();
+  }, []);
+
+
+
   const categories = ['General', 'Frontend', 'Backend', 'Database', 'DevOps', 'Security', 'Testing', 'Algorithm'];
 
   return (
@@ -109,11 +148,16 @@ export const CommunityPage: React.FC = () => {
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
             className="w-full bg-transparent border-0 focus:ring-0 text-sm text-slate-700 font-medium py-1"
+            disabled={languagesLoading || languagesError}
           >
-            <option value="">All Languages</option>
-            {languages.map(l => (
-              <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>
-            ))}
+            <option value="">{languagesLoading ? 'Loading languages...' : 'All Languages'}</option>
+            {languagesError ? (
+              <option value="" disabled>Unable to load languages.</option>
+            ) : (
+              dbLanguages.map(l => (
+                <option key={l.name} value={l.name}>{l.original}</option>
+              ))
+            )}
           </select>
         </div>
 

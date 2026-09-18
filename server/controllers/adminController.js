@@ -1,6 +1,9 @@
 const User = require('../models/User');
 const Snippet = require('../models/Snippet');
 const Category = require('../models/Category');
+const Favorite = require('../models/Favorite');
+const Collection = require('../models/Collection');
+const SnippetVersion = require('../models/SnippetVersion');
 
 // @desc    Get all users
 // @route   GET /api/admin/users
@@ -111,11 +114,22 @@ const moderateSnippet = async (req, res) => {
 
 const deleteSnippetAdmin = async (req, res) => {
   try {
-    const snippet = await Snippet.findByIdAndDelete(req.params.id);
+    const snippet = await Snippet.findById(req.params.id);
     if (!snippet) {
       return res.status(404).json({ message: 'Snippet not found' });
     }
-    res.json({ message: 'Snippet removed' });
+    
+    // Safely clean up references
+    await Favorite.deleteMany({ snippetId: snippet._id });
+    await Collection.updateMany(
+      { snippets: snippet._id },
+      { $pull: { snippets: snippet._id } }
+    );
+    await SnippetVersion.deleteMany({ snippetId: snippet._id });
+    
+    await snippet.deleteOne();
+    
+    res.json({ message: 'Snippet deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -291,6 +305,36 @@ const getAnalytics = async (req, res) => {
       .limit(5)
       .select('title language viewsCount favoritesCount');
 
+    // Generate Activity Timeline
+    const recentUsersActivity = await User.find({}).sort({ createdAt: -1 }).limit(5);
+    const recentSnippetsActivity = await Snippet.find({}).populate('author', 'name username').sort({ createdAt: -1 }).limit(5);
+    
+    let activityTimeline = [];
+    
+    recentUsersActivity.forEach(u => {
+      activityTimeline.push({
+        id: `user_${u._id}`,
+        type: 'user_joined',
+        message: `New user joined the platform`,
+        timestamp: u.createdAt,
+        user: u.username || u.name
+      });
+    });
+
+    recentSnippetsActivity.forEach(s => {
+      activityTimeline.push({
+        id: `snippet_${s._id}`,
+        type: 'snippet_created',
+        message: `New snippet "${s.title}" created`,
+        timestamp: s.createdAt,
+        user: s.author ? (s.author.username || s.author.name) : 'Unknown'
+      });
+    });
+
+    // Sort descending by timestamp
+    activityTimeline.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    activityTimeline = activityTimeline.slice(0, 10);
+
     res.json({
       stats: {
         totalUsers,
@@ -324,7 +368,8 @@ const getAnalytics = async (req, res) => {
         language: s.language,
         views: s.viewsCount,
         likes: s.favoritesCount
-      }))
+      })),
+      activityTimeline
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -2,7 +2,6 @@ import React from 'react';
 import { User } from 'lucide-react';
 import { ProfileCard } from '../../components/profile/ProfileCard';
 import { ProfileForm } from '../../components/profile/ProfileForm';
-import { ChangePasswordForm } from '../../components/profile/ChangePasswordForm';
 import { AccountInfo } from '../../components/profile/AccountInfo';
 import { ProfileStats } from '../../components/profile/ProfileStats';
 import { useAuth } from '../../hooks/useAuth';
@@ -31,13 +30,6 @@ export const ProfilePage: React.FC = () => {
             description="Update your basic profile information and how others see you."
           >
             <ProfileForm />
-          </ProfileCard>
-
-          <ProfileCard 
-            title="Security" 
-            description="Update your password to keep your account secure."
-          >
-            <ChangePasswordForm />
           </ProfileCard>
         </div>
 

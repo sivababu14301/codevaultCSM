@@ -36,18 +36,39 @@ export const SnippetForm: React.FC<SnippetFormProps> = ({ initialData, onSubmit,
   const [tagInput, setTagInput] = useState('');
   const [isPublic, setIsPublic] = useState(initialData?.isPublic || false);
   const [dbCategories, setDbCategories] = useState<any[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const res = await api.get('/categories');
         setDbCategories(res.data);
-        if (res.data.length > 0 && !initialData?.categoryId) {
-          setCategoryId(res.data[0].id);
-          setCategory(res.data[0].name);
+        if (res.data.length > 0) {
+          // Try to match the initial language (user's preference) to a category
+          const preferredCat = res.data.find((c: any) => c.name.toLowerCase() === (initialData?.language || '').toLowerCase());
+          
+          if (preferredCat) {
+            setCategoryId(preferredCat.id);
+            setCategory(preferredCat.name);
+            if (!initialData?.language || initialData.language === (initialData.language).toLowerCase()) {
+              // If it's a new snippet and language is not already properly cased, fix it
+              setLanguage(preferredCat.name);
+            }
+          } else {
+            if (!initialData?.categoryId) {
+              setCategoryId(res.data[0].id);
+              setCategory(res.data[0].name);
+            }
+            // Safe fallback if preference was deleted
+            if (!initialData?.language || initialData.language === (initialData.language).toLowerCase()) {
+              setLanguage(res.data[0].name);
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error);
+      } finally {
+        setIsLoadingCategories(false);
       }
     };
     fetchCategories();
@@ -117,12 +138,24 @@ export const SnippetForm: React.FC<SnippetFormProps> = ({ initialData, onSubmit,
           </div>
 
           <div className="bg-white p-0 rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full">
-            <CodeEditor 
-              initialCode={code} 
-              initialLanguage={language}
-              onChange={(v) => setCode(v || '')} 
-              onLanguageChange={(l) => setLanguage(l || 'JavaScript')}
-            />
+            {isLoadingCategories ? (
+              <div className="h-[600px] flex items-center justify-center text-slate-500 flex-col gap-2">
+                <div className="w-6 h-6 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                <span className="text-sm font-medium">Loading languages...</span>
+              </div>
+            ) : dbCategories.length === 0 ? (
+              <div className="h-[600px] flex items-center justify-center text-slate-500">
+                <span className="text-sm font-medium text-rose-500">No programming languages available.</span>
+              </div>
+            ) : (
+              <CodeEditor 
+                initialCode={code} 
+                initialLanguage={language}
+                availableLanguages={dbCategories.map(c => c.name)}
+                onChange={(v) => setCode(v || '')} 
+                onLanguageChange={(l) => setLanguage(l || 'JavaScript')}
+              />
+            )}
           </div>
         </div>
 

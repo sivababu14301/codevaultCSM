@@ -2,18 +2,30 @@ import React, { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { ThemeSettings } from '../../components/settings/ThemeSettings';
-import { LanguageSettings } from '../../components/settings/LanguageSettings';
 import { EditorSettings } from '../../components/settings/EditorSettings';
 import { PreferenceSettings } from '../../components/settings/PreferenceSettings';
 import { ResetSettingsModal } from '../../components/settings/ResetSettingsModal';
 import { dummySettings, defaultSettings } from '../../data/dummySettings';
 import { UserSettings } from '../../types/settings';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
+import { useToast } from '../../components/ui/Toast';
 
 export const SettingsPage: React.FC = () => {
-  const [settings, setSettings] = useState<UserSettings>(dummySettings);
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { user, updateUser } = useAuth();
+  const { showToast } = useToast();
+  
+  const [settings, setSettings] = useState<UserSettings>(() => {
+    // Initialize dummy settings but override with actual user preference
+    const initial = { ...dummySettings };
+    if (user?.defaultProgrammingLanguage) {
+      initial.preferences.defaultLanguage = user.defaultProgrammingLanguage;
+    }
+    return initial;
+  });
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const handleUpdateEditor = (key: keyof UserSettings['editor'], value: any) => {
     setSettings(prev => ({
@@ -22,11 +34,24 @@ export const SettingsPage: React.FC = () => {
     }));
   };
 
-  const handleUpdatePreference = (key: keyof UserSettings['preferences'], value: any) => {
+  const handleUpdatePreference = async (key: keyof UserSettings['preferences'], value: any) => {
     setSettings(prev => ({
       ...prev,
       preferences: { ...prev.preferences, [key]: value }
     }));
+
+    // If changing defaultLanguage, save it to the backend immediately
+    if (key === 'defaultLanguage') {
+      try {
+        await api.put('/auth/profile', {
+          defaultProgrammingLanguage: value
+        });
+        updateUser({ defaultProgrammingLanguage: value });
+        showToast('Programming language preference updated.', 'success');
+      } catch (error) {
+        showToast('Failed to update language preference', 'error');
+      }
+    }
   };
 
   const handleResetSettings = () => {
@@ -58,14 +83,19 @@ export const SettingsPage: React.FC = () => {
       <div className="flex flex-col gap-6">
         <ThemeSettings
           theme={theme}
-          onChange={(val) => setTheme(val)}
+          onChange={async (val) => {
+            setTheme(val);
+            try {
+              await api.put('/auth/profile', { defaultTheme: val });
+              updateUser({ defaultTheme: val });
+              showToast('Theme preference updated.', 'success');
+            } catch (error) {
+              showToast('Failed to save theme preference', 'error');
+            }
+          }}
         />
         
-        <LanguageSettings
-          language={settings.language}
-          onChange={(val) => setSettings(prev => ({ ...prev, language: val }))}
-        />
-        
+
         <EditorSettings
           settings={settings.editor}
           onChange={handleUpdateEditor}

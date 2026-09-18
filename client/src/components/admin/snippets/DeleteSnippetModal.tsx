@@ -15,19 +15,18 @@ export const DeleteSnippetModal: React.FC<DeleteSnippetModalProps> = ({ snippet,
   if (!snippet) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Delete Snippet">
+    <Modal isOpen={isOpen} onClose={onClose} title="Delete this snippet?">
       <div className="flex flex-col items-center text-center py-4">
         <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-4 text-rose-500">
           <Trash2 className="w-8 h-8" />
         </div>
         
         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-          Delete Snippet?
+          Delete this snippet?
         </h3>
         
         <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
-          Are you completely sure you want to delete <span className="font-semibold text-slate-700 dark:text-slate-300">"{snippet.title}"</span>? 
-          This action is permanent and cannot be undone.
+          Are you sure you want to permanently delete this snippet? This action cannot be undone.
         </p>
 
         <div className="flex w-full gap-3">
@@ -41,7 +40,7 @@ export const DeleteSnippetModal: React.FC<DeleteSnippetModalProps> = ({ snippet,
               onClose();
             }}
           >
-            Yes, Delete
+            Delete Snippet
           </Button>
         </div>
       </div>

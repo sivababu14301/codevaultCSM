@@ -4,11 +4,13 @@ import { useSnippets } from '../../hooks/useSnippets';
 import { SharedSnippetInfo, ShareCard } from '../../components/share/ShareCard';
 import { EmptyShareState } from '../../components/share/EmptyShareState';
 import { ShareDialog } from '../../components/share/ShareDialog';
+import { SearchWithButton } from '../../components/ui/SearchWithButton';
 
 export const SharePage: React.FC = () => {
   const { snippets } = useSnippets();
   const [sharedSnippets, setSharedSnippets] = useState<SharedSnippetInfo[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     // Treat all snippets as shared for this view as requested
@@ -62,6 +64,16 @@ export const SharePage: React.FC = () => {
     setSharedSnippets([newShared, ...sharedSnippets]);
   };
 
+  const filteredSharedSnippets = sharedSnippets.filter(s => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      s.snippet.title.toLowerCase().includes(term) ||
+      s.snippet.language.toLowerCase().includes(term) ||
+      s.visibility.toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -85,12 +97,26 @@ export const SharePage: React.FC = () => {
         )}
       </div>
 
+      {sharedSnippets.length > 0 && (
+        <SearchWithButton 
+          placeholder="Search shared links..." 
+          onSearch={setSearchTerm} 
+          onClear={() => setSearchTerm('')} 
+        />
+      )}
+
       {/* Grid or Empty State */}
-      {sharedSnippets.length === 0 ? (
-        <EmptyShareState onShareClick={() => setIsDialogOpen(true)} />
+      {filteredSharedSnippets.length === 0 ? (
+        searchTerm ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900">No shared links found.</h3>
+          </div>
+        ) : (
+          <EmptyShareState onShareClick={() => setIsDialogOpen(true)} />
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sharedSnippets.map((shared) => (
+          {filteredSharedSnippets.map((shared) => (
             <ShareCard 
               key={shared.snippet._id} 
               sharedSnippet={shared} 

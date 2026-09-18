@@ -62,6 +62,20 @@ const userSchema = mongoose.Schema(
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    defaultProgrammingLanguage: {
+      type: String,
+      default: 'javascript',
+    },
+    defaultTheme: {
+      type: String,
+      default: 'light',
+    },
+    rememberAccessKey: {
+      type: String,
+      select: false, // Don't return by default
+    },
+    resetAuthToken: String,
+    resetAuthExpire: Date,
   },
   {
     timestamps: true,

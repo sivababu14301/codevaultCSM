@@ -4,14 +4,17 @@ import { Code2 } from 'lucide-react';
 interface LanguageSelectorProps {
   language: string;
   setLanguage: (lang: string) => void;
+  availableLanguages?: string[];
 }
 
-export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ language, setLanguage }) => {
-  const languages = [
+export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ language, setLanguage, availableLanguages }) => {
+  const defaultLanguages = [
     'JavaScript', 'TypeScript', 'React', 'Node.js', 
     'Python', 'Java', 'C', 'C++', 'HTML', 'CSS', 
     'SQL', 'JSON', 'Markdown'
   ];
+  
+  const languages = availableLanguages && availableLanguages.length > 0 ? availableLanguages : defaultLanguages;
 
   return (
     <div className="flex items-center gap-2">

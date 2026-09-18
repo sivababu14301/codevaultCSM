@@ -20,7 +20,8 @@ export const SnippetManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [languageFilter, setLanguageFilter] = useState('all');
   const [visibilityFilter, setVisibilityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -41,12 +42,19 @@ export const SnippetManagement: React.FC = () => {
     fetchSnippets();
   }, []);
 
+  React.useEffect(() => {
+    const q = searchParams.get('q');
+    if (q !== null) {
+      setSearchTerm(q);
+    }
+  }, [searchParams]);
+
   // Modals state
   const [selectedSnippet, setSelectedSnippet] = useState<AdminSnippet | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Check for auto-open review modal
-  const [searchParams] = useSearchParams();
   const reviewId = searchParams.get('review');
   React.useEffect(() => {
     if (reviewId && snippets.length > 0) {
@@ -85,6 +93,22 @@ export const SnippetManagement: React.FC = () => {
   const openViewModal = (snippet: AdminSnippet) => {
     setSelectedSnippet(snippet);
     setIsViewModalOpen(true);
+  };
+
+  const openDeleteModal = (snippet: AdminSnippet) => {
+    setSelectedSnippet(snippet);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteSnippet = async (snippetId: string) => {
+    try {
+      await api.delete(`/admin/snippets/${snippetId}`);
+      toast('Snippet deleted successfully', 'success');
+      // Refresh without full page reload
+      setSnippets(prev => prev.filter(s => s.id !== snippetId));
+    } catch (error) {
+      toast('Failed to delete snippet', 'error');
+    }
   };
 
   const clearFilters = () => {
@@ -154,6 +178,7 @@ export const SnippetManagement: React.FC = () => {
           <SnippetTable 
             snippets={filteredSnippets} 
             onView={openViewModal} 
+            onDelete={openDeleteModal}
           />
         )}
         
@@ -175,6 +200,12 @@ export const SnippetManagement: React.FC = () => {
         snippet={selectedSnippet} 
         isOpen={isViewModalOpen} 
         onClose={() => setIsViewModalOpen(false)} 
+      />
+      <DeleteSnippetModal 
+        snippet={selectedSnippet}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteSnippet}
       />
     </div>
   );

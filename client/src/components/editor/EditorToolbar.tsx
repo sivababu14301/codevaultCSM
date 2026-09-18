@@ -10,6 +10,7 @@ import { EditorSettings } from './EditorSettings';
 interface EditorToolbarProps {
   language: string;
   setLanguage: (lang: string) => void;
+  availableLanguages?: string[];
   theme: string;
   setTheme: (theme: string) => void;
   fontSize: number;
@@ -30,7 +31,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = (props) => {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 bg-white/80 backdrop-blur-md border-b border-slate-200 z-10 sticky top-0">
       <div className="flex flex-wrap items-center gap-3">
-        <LanguageSelector language={props.language} setLanguage={props.setLanguage} />
+        <LanguageSelector language={props.language} setLanguage={props.setLanguage} availableLanguages={props.availableLanguages} />
         <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
         <ThemeSelector theme={props.theme} setTheme={props.setTheme} />
         <FontSizeSelector fontSize={props.fontSize} setFontSize={props.setFontSize} />

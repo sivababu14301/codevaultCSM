@@ -37,6 +37,7 @@ import { UserManagementPage } from './pages/admin/UserManagementPage';
 import { SnippetManagement } from './pages/admin/SnippetManagement';
 import { CategoryManagement } from './pages/admin/CategoryManagement';
 import { ReportsAnalytics } from './pages/admin/ReportsAnalytics';
+import { AdminPreferencesPage } from './pages/admin/AdminPreferencesPage';
 import { CollectionsPage } from './pages/collections/CollectionsPage';
 import { CollectionDetailsPage } from './pages/collections/CollectionDetailsPage';
 import { FavoritesPage } from './pages/favorites/FavoritesPage';
@@ -74,8 +75,8 @@ function App() {
             <Route element={<MainLayout />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+              <Route path="/forgot-password" element={<Navigate to="/reset-password" replace />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
             </Route>
 
@@ -114,7 +115,7 @@ function App() {
                 <Route path="/admin/categories" element={<CategoryManagement />} />
                 <Route path="/admin/reports" element={<ReportsAnalytics />} />
                 <Route path="/admin/security" element={<SettingsPage />} />
-                <Route path="/admin/settings" element={<SettingsPage />} />
+                <Route path="/admin/settings" element={<AdminPreferencesPage />} />
               </Route>
             </Route>
 

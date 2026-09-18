@@ -15,7 +15,9 @@ export const AddSnippetPage: React.FC = () => {
   const { addSnippetToCollection } = useCollections();
   const { user } = useAuth();
   
-  const initialData = location.state?.initialData;
+  const initialData = location.state?.initialData || {
+    language: user?.defaultProgrammingLanguage || 'JavaScript'
+  };
 
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);

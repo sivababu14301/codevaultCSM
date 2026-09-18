@@ -7,9 +7,10 @@ import { EmptySnippets } from './EmptySnippets';
 interface SnippetTableProps {
   snippets: AdminSnippet[];
   onView: (snippet: AdminSnippet) => void;
+  onDelete?: (snippet: AdminSnippet) => void;
 }
 
-export const SnippetTable: React.FC<SnippetTableProps> = ({ snippets, onView }) => {
+export const SnippetTable: React.FC<SnippetTableProps> = ({ snippets, onView, onDelete }) => {
   if (snippets.length === 0) {
     return <EmptySnippets />;
   }
@@ -73,6 +74,15 @@ export const SnippetTable: React.FC<SnippetTableProps> = ({ snippets, onView }) 
                     <Eye className="w-4 h-4" />
                     View
                   </button>
+                  {onDelete && (
+                    <button 
+                      onClick={() => onDelete(snippet)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-100 dark:bg-slate-800/50 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
