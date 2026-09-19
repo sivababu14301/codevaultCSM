@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Search, Plus, User as UserIcon, LogOut, Shield, Bell, Menu } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
 import { Button } from '../ui/Button';
 import { NotificationBadge } from '../notifications/NotificationBadge';
 
@@ -35,8 +36,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
     }
   };
   
-  // No real notifications implemented yet
-  const unreadCount = 0;
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      api.get('/notifications').then((res) => {
+        const unread = res.data.filter((n: any) => !n.isRead).length;
+        setUnreadCount(unread);
+      }).catch(console.error);
+    }
+  }, [isAuthenticated, location.pathname]); // Refresh on navigation
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-[#1F2937] bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md transition-colors duration-200">
@@ -79,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
           {isAuthenticated ? (
             <>
               <button
-                onClick={() => navigate('/notifications')}
+                onClick={() => navigate(user?.role === 'admin' ? '/admin/notifications' : '/notifications')}
                 className="p-2 text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-full transition-colors relative"
                 aria-label="Notifications"
               >
@@ -88,15 +97,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
               </button>
 
               <button
-                onClick={() => navigate('/snippets/new')}
+                onClick={() => navigate(user?.role === 'admin' ? '/admin/snippets' : '/snippets/new')}
                 className="hidden sm:flex px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 rounded-xl shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/35 transition-all duration-200 items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                <span>New Snippet</span>
+                <span>{user?.role === 'admin' ? 'Manage Snippets' : 'New Snippet'}</span>
               </button>
 
               <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-[#1F2937]">
-                <Link to="/profile" className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
+                <Link to={user?.role === 'admin' ? '/admin/profile' : '/profile'} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
                   {(user as any)?.avatar ? (
                     <img src={(user as any).avatar} alt={user?.username} className="w-8 h-8 rounded-full border border-purple-200 object-cover" />
                   ) : (
@@ -108,13 +117,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
                 </Link>
 
                 {user?.role === 'admin' && (
-                  <Link to="/admin" className="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition" title="Admin Panel">
+                  <Link to="/admin/dashboard" className="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition" title="Admin Panel">
                     <Shield className="w-5 h-5" />
                   </Link>
                 )}
 
                 <button
-                  onClick={logout}
+                  onClick={() => { logout(); navigate('/login'); }}
                   className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition"
                   title="Logout"
                 >

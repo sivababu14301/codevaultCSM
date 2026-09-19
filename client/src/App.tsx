@@ -38,6 +38,8 @@ import { SnippetManagement } from './pages/admin/SnippetManagement';
 import { CategoryManagement } from './pages/admin/CategoryManagement';
 import { ReportsAnalytics } from './pages/admin/ReportsAnalytics';
 import { AdminPreferencesPage } from './pages/admin/AdminPreferencesPage';
+import { AdminNotificationsPage } from './pages/admin/AdminNotificationsPage';
+import { AdminProfilePage } from './pages/admin/AdminProfilePage';
 import { CollectionsPage } from './pages/collections/CollectionsPage';
 import { CollectionDetailsPage } from './pages/collections/CollectionDetailsPage';
 import { FavoritesPage } from './pages/favorites/FavoritesPage';
@@ -114,8 +116,10 @@ function App() {
                 <Route path="/admin/snippets" element={<SnippetManagement />} />
                 <Route path="/admin/categories" element={<CategoryManagement />} />
                 <Route path="/admin/reports" element={<ReportsAnalytics />} />
+                <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
                 <Route path="/admin/security" element={<SettingsPage />} />
                 <Route path="/admin/settings" element={<AdminPreferencesPage />} />
+                <Route path="/admin/profile" element={<AdminProfilePage />} />
               </Route>
             </Route>
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Code, FolderKanban, FileText, Settings, ArrowLeft, X } from 'lucide-react';
+import { LayoutDashboard, Users, Code, FolderKanban, FileText, Settings, ArrowLeft, X, Bell } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export interface AdminSidebarProps {
@@ -15,6 +15,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen = false, onCl
     { name: 'Snippet Management', path: '/admin/snippets', icon: Code, exact: false },
     { name: 'Category Management', path: '/admin/categories', icon: FolderKanban, exact: false },
     { name: 'Reports', path: '/admin/reports', icon: FileText, exact: false },
+    { name: 'Notifications', path: '/admin/notifications', icon: Bell, exact: false },
     { name: 'Settings', path: '/admin/settings', icon: Settings, exact: false },
   ];
 
